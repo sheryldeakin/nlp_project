@@ -1,0 +1,4 @@
+bert_emotions_results/
+bert_emotions_results/
+*.ipynb_checkpoints
+__pycache__/
