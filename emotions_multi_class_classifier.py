@@ -385,29 +385,6 @@ X_test_bert = get_bert_embeddings(test_texts, batch_size=32)
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
 
-# def run_logistic_regression_bert(X_train_bert, X_test_bert, train_labels, test_labels):
-
-#     print("------------------ Logistic Regression + BERT ------------------")
-
-#     # Convert multi-label one-hot encoding to single-class labels (Multiclass)
-#     train_labels_multiclass = np.argmax(train_labels, axis=1)  # Convert to class indices
-#     test_labels_multiclass = np.argmax(test_labels, axis=1)
-
-#     # Train Logistic Regression model for Multiclass classification
-#     clf_bert = LogisticRegression(max_iter=1000, solver="lbfgs")  
-#     clf_bert.fit(X_train_bert, train_labels_multiclass)
-
-#     # Predict on test set
-#     y_pred_bert = clf_bert.predict(X_test_bert)
-
-#     # Evaluate accuracy & F1-score for multiclass classification
-#     accuracy_bert = accuracy_score(test_labels_multiclass, y_pred_bert)
-#     f1_micro = f1_score(test_labels_multiclass, y_pred_bert, average="micro")
-#     f1_macro = f1_score(test_labels_multiclass, y_pred_bert, average="macro")
-
-#     print(f"\nLogistic Regression (BERT) Accuracy: {accuracy_bert:.2f}")
-#     print(f"Logistic Regression (BERT) F1 Score (Micro): {f1_micro:.2f}")
-#     print(f"Logistic Regression (BERT) F1 Score (Macro): {f1_macro:.2f}")
 
 def run_logistic_regression_bert(X_train_bert, X_test_bert, train_labels, test_labels):
     print("------------------ Logistic Regression + BERT ------------------")
@@ -930,10 +907,10 @@ def evaluate_cnn_model(model, train_loader, test_loader, device, label="cnn_mode
         os.makedirs(save_dir, exist_ok=True)
         save_path = os.path.join(save_dir, f"{label}_{split_name.lower()}_metrics.csv")
         df.to_csv(save_path, index=False)
-        print(f"\n✅ Per-class metrics saved to {save_path}")
+        print(f"\nPer-class metrics saved to {save_path}")
 
         # Print final sorted values
-        print(f"\n🔍 {split_name} Set — Top Emotions by F1:")
+        print(f"\n{split_name} Set — Top Emotions by F1:")
         print(df.sort_values(by="F1", ascending=False).to_string(index=False))
 
         return f1_micro, f1_macro
@@ -1302,7 +1279,7 @@ def evaluate_bert_model(model, train_loader, test_loader, device, label="bert_fi
         os.makedirs(save_dir, exist_ok=True)
         save_path = os.path.join(save_dir, f"{label}_{split_name.lower()}_metrics.csv")
         df.to_csv(save_path, index=False)
-        print(f"\n✅ Per-class metrics saved to {save_path}")
+        print(f"\nPer-class metrics saved to {save_path}")
 
         print(f"\n🔍 {split_name} Set — Top Emotions by F1:")
         print(df.sort_values(by="F1", ascending=False).to_string(index=False))
@@ -1657,7 +1634,7 @@ def run_selected_models(
 
     save_path = f"results/final_model_results_{label_prefix}.csv"
     results_df.to_csv(save_path, index=False)
-    print(f"\n📄 Final consolidated results saved to: {save_path}")
+    print(f"\nFinal consolidated results saved to: {save_path}")
 
     plot_all_model_histories(history_dict, label_prefix)
     plot_model_groups(history_dict, label_prefix)
