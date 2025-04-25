@@ -8,8 +8,15 @@ from sklearn.metrics import f1_score, precision_score, recall_score
 import warnings
 from sklearn.exceptions import UndefinedMetricWarning
 
+import torch
+print(torch.cuda.is_available())                     # Should return: True
+print(torch.cuda.get_device_name(0))                 # Should print: "NVIDIA GeForce RTX 5090" (or similar)
+print(torch.cuda.current_device())                   # Should return: 0
+print(torch.cuda.device_count())                     # Should return: 1 (or more if multi-GPU)
+
+
 # Load dataset
-df = pd.read_csv("go_emotions_dataset.csv")  
+df = pd.read_csv("data/go_emotions_dataset.csv")  
 
 # Remove unnecessary columns
 df = df.drop(columns=["id", "example_very_unclear"])
@@ -85,7 +92,8 @@ training_args = TrainingArguments(
     num_train_epochs=5,
     weight_decay=0.01,
     logging_dir="./logs",
-    logging_steps=10
+    logging_steps=10,
+    fp16=True
 )
 
 # Compute Metrics
