@@ -1,0 +1,4 @@
+Label,Precision,Recall,F1
+symptoms_keywords_Behavioral Symptoms (Actions & Habits),0.0,0.0,0.0
+symptoms_keywords_Emotional & Mood-Related Symptoms,0.9545454545454546,0.5675675675675675,0.711864406779661
+symptoms_keywords_Motivation & Functioning Symptoms,0.027777777777777776,1.0,0.05405405405405406
