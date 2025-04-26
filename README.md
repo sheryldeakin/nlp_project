@@ -1,4 +1,5 @@
-# Machine Learning Project
+# Reading Between the Lines: Multi-Label Classification of Mental Health Signals Using Weak Supervision and BERT Embeddings
+# 
 This project implements a full **multi-label classification pipeline** for detecting mental health **triggers**, **themes**, and **symptoms** from text data.
 
 It supports training and evaluating a variety of models, including:
