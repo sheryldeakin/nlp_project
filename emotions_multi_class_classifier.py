@@ -1170,14 +1170,14 @@ def train_bert_finetune_model(model, train_loader, test_loader, device, num_epoc
 
             optimizer.zero_grad()
             outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-            loss = criterion(outputs, labels)
+            loss = criterion(outputs.logits, labels)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)  # gradient clipping
             optimizer.step()
 
             total_loss += loss.item()
 
-            probs = torch.sigmoid(outputs)
+            probs = torch.sigmoid(outputs.logits)
             preds = (probs > 0.5).int().cpu().numpy()
             y_pred_train.extend(preds)
             y_true_train.extend(labels.cpu().numpy())
@@ -1198,7 +1198,7 @@ def train_bert_finetune_model(model, train_loader, test_loader, device, num_epoc
                 labels = batch['labels'].to(device)
 
                 logits = model(input_ids=input_ids, attention_mask=attention_mask)
-                probs = torch.sigmoid(logits)
+                probs = torch.sigmoid(logits.logits)
                 preds = (probs > 0.5).int().cpu().numpy()
                 y_pred_test.extend(preds)
                 y_true_test.extend(labels.cpu().numpy())
@@ -1240,7 +1240,7 @@ def evaluate_bert_model(model, train_loader, test_loader, device, label="bert_fi
                 labels = batch['labels'].to(device)
 
                 outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-                probs = torch.sigmoid(outputs)
+                probs = torch.sigmoid(outputs.logits)
                 preds = (probs > 0.5).int().cpu().numpy()
                 all_preds.extend(preds)
                 all_labels.extend(labels.cpu().numpy())
@@ -1296,11 +1296,20 @@ def evaluate_bert_model(model, train_loader, test_loader, device, label="bert_fi
 def run_finetuned_bert_model(train_texts, test_texts, train_labels, test_labels, label, num_epochs=200, dropout=0.3, lr=2e-5, label_names=""):
     print(f"------------------ Fine-Tuned BERT: {label} ------------------")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = BertForSequenceClassification.from_pretrained(
+    "sdeakin/fine_tuned_bert_emotions",
+    problem_type="multi_label_classification",
+    ignore_mismatched_sizes=True
+    )
     tokenizer = BertTokenizer.from_pretrained("sdeakin/fine_tuned_bert_emotions")
+
+
 
     train_loader, test_loader = prepare_bert_dataloaders(train_texts, test_texts, train_labels, test_labels, tokenizer)
 
-    model = BertForSequenceClassification.from_pretrained("sdeakin/fine_tuned_bert_emotions")
+    # Replace classifier dynamically
+    model.classifier = torch.nn.Linear(model.config.hidden_size, train_labels.shape[1])
+    model.num_labels = train_labels.shape[1]
 
     # model = BERTClassifier("fine_tuned_bert_emotions", num_classes=train_labels.shape[1], dropout=dropout)
     save_path = f"data/best_finetuned_bert_model_{label}.pt"

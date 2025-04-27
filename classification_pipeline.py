@@ -26,7 +26,7 @@ def load_and_prepare_dataset(path, label_col, prefix):
     labels = mlb.fit_transform(df[label_col])
     label_names = mlb.classes_
 
-    print(f"📦 {prefix} dataset: {len(df)} examples, {len(label_names)} labels")
+    print(f"{prefix} dataset: {len(df)} examples, {len(label_names)} labels")
 
     return df["text"].tolist(), labels, label_names
 
@@ -49,7 +49,7 @@ def process_and_run_all_models():
         ("labeled_outputs/labeled_symptoms_sentiment.csv", "symptoms_label_sentiment", "symptoms_sentiment"),
     ]
 
-    progress = tqdm(datasets, desc="🧠 Running datasets", unit="dataset")
+    progress = tqdm(datasets, desc="Running datasets", unit="dataset")
 
     for path, label_col, prefix in progress:
         start_time = time.time()
@@ -92,7 +92,7 @@ def process_and_run_all_models():
             "bert_finetune"
         ]
 
-        print(f"🚀 Running models for {prefix.upper()}")
+        print(f"Running models for {prefix.upper()}")
         run_selected_models(models_to_run, X_train_tfidf=X_train_tfidf,
             X_test_tfidf=X_test_tfidf,
             X_train_bert=X_train_bert,
