@@ -60,7 +60,7 @@ Each generated CSV should contain:
    - The code expects a fine-tuned BERT model named `"fine_tuned_bert_emotions"`.
    - Either:
      - Fine-tune BERT yourself using an emotions dataset (such as GoEmotions) using the emotions_bert_fine_tuned.py file,
-     - Or use the uploaded hugging face model (default implemented) 'sdeakin/fine_tuned_bert_emotions'
+     - Or use the uploaded hugging face model (default implemented) 'sdeakin/fine_tuned_bert_emotions' (i just tried this and its not working with this and I'm trying to fix it, but the locale file and folder definitely work)
 
 4. **Run the Classification Pipeline**
     ```bash
