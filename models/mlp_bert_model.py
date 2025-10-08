@@ -105,11 +105,6 @@ class MLPBert:
 
         save_path = f"resources/best_mlp_model_{label}.pt"
 
-        # # Load best model for final evaluation
-        # if os.path.exists(save_path):
-        #     model.load_state_dict(torch.load(save_path))
-        #     print("\nLoaded best model from disk for final evaluation for {label}.")
-
         history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy = train_mlp_model(
             model, train_loader, test_loader, device, num_epochs, save_path)
         mlp_f1_micro_train, mlp_f1_macro_train, mlp_f1_micro_test, mlp_f1_macro_test = self._evaluate_mlp_model(model,
