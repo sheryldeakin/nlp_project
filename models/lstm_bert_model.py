@@ -8,6 +8,7 @@ import torch.optim as optim
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_fscore_support
 from torch.utils.data import DataLoader, TensorDataset
 
+from nlp_project.preprocessing.go_emotions_preprocessing import GoEmotionsPreprocessing
 from nlp_project.utils.helper_methods import HelperMethods
 from nlp_project.utils.logger import Logger
 
@@ -32,9 +33,11 @@ class BiLSTMClassifier(nn.Module):
 
 class LSTMBert:
 
-    def __init__(self):
+    def __init__(self, num_epochs: int = 100):
         self.logger: Logger = Logger(class_name=self.__class__.__name__)
-        self.helper_methods:HelperMethods = HelperMethods()
+        self.num_epochs = num_epochs
+        self.helper_methods: HelperMethods = HelperMethods()
+        self.go_emotions_preprocessing: GoEmotionsPreprocessing = GoEmotionsPreprocessing()
 
     def _train_lstm_model(self, model, train_loader, test_loader, device, num_epochs, save_path, lr=1e-8, weights=1):
         optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -185,7 +188,8 @@ class LSTMBert:
 
         return train_loader, test_loader
 
-    def _run_lstm_bert(self, X_train_bert, X_test_bert, train_labels, test_labels, hidden_dim, num_layers, dropout, lr,
+    def _run_lstm_bert(self, X_train_bert, X_test_bert, train_labels, test_labels, hidden_dimensions, num_layers,
+                       dropout, learning_rate,
                        label,
                        num_epochs=200, label_names=""):
         print(f"------------------ BiLSTM + BERT: {label} ------------------")
@@ -195,7 +199,7 @@ class LSTMBert:
         num_classes = train_labels.shape[1]
         model = BiLSTMClassifier(
             input_dim=768,
-            hidden_dim=hidden_dim,
+            hidden_dim=hidden_dimensions,
             num_layers=num_layers,
             num_classes=num_classes,
             dropout=dropout
@@ -216,7 +220,7 @@ class LSTMBert:
         #     print(f"\nLoaded best BiLSTM model for {label}.")
 
         history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy = self._train_lstm_model(
-            model, train_loader, test_loader, device, num_epochs, save_path, lr=lr, weights=weights)
+            model, train_loader, test_loader, device, num_epochs, save_path, lr=learning_rate, weights=weights)
         f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test = self._evaluate_cnn_model(model, train_loader,
                                                                                                 test_loader,
                                                                                                 device, label=label,
@@ -226,7 +230,12 @@ class LSTMBert:
 
     def execute_lstm_bert(self):
 
+        lstm_results = []
+        train_texts, test_texts, train_labels, test_labels = self.go_emotions_preprocessing.get_training_test_data_split()
+
         X_train_bert = self.helper_methods.get_bert_embeddings(train_texts, batch_size=32)
+        X_test_bert = self.helper_methods.get_bert_embeddings(test_texts, batch_size=32)
+        label_names = self.helper_methods.get_go_emotions_column_dataframe()
 
         lstm_configs_list = [
             (256, 2, 0.3, 1e-4, "bilstm_default"),
@@ -237,9 +246,12 @@ class LSTMBert:
             (256, 2, 0.3, 1e-5, "bilstm_lr_1e5"),
             (256, 2, 0.3, 1e-6, "bilstm_lr_1e6"),
         ]
-        for hidden_dim, num_layers, dropout, lr, label in lstm_configs_list:
+        for hidden_dimensions, num_layers, dropout, learning_rate, label in lstm_configs_list:
             print(f"\nRunning BiLSTM: {label}")
-            history, *metrics = self._run_lstm_bert(X_train_bert, X_test_bert, train_labels, test_labels,
-                                                    hidden_dim, num_layers, dropout, lr, label, num_epochs,
+            history, *metrics = self._run_lstm_bert(X_train_bert=X_train_bert, X_test_bert=X_test_bert,
+                                                    train_labels=train_labels, test_labels=test_labels,
+                                                    hidden_dimensions=hidden_dimensions, num_layers=num_layers,
+                                                    dropout=dropout, lr=learning_rate, label=label,
+                                                    num_epochs=self.num_epochs,
                                                     label_names=label_names)
             store_results(f"BiLSTM {label}", history, *metrics, results_array=lstm_results)
