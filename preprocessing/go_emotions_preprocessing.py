@@ -8,11 +8,11 @@ class GoEmotionsPreprocessing:
     def __init__(self):
         self.file_path_str: str = "resources/csv_files/go_emotions_dataset.csv"
 
-    def get_dataframe(self) -> pd.DataFrame:
+    def _get_dataframe(self) -> pd.DataFrame:
         return pd.read_csv(self.file_path_str)
 
-    def get_sample_dataframe(self) -> pd.DataFrame:
-        dataframe: pd.DataFrame = self.get_dataframe()
+    def _get_sample_dataframe(self) -> pd.DataFrame:
+        dataframe: pd.DataFrame = self._get_dataframe()
 
         cleaned_dataframe: pd.DataFrame = dataframe.drop(columns=["id", "example_very_unclear"])
 
@@ -35,7 +35,7 @@ class GoEmotionsPreprocessing:
         return df_sample
 
     def get_training_test_data_split(self):
-        df_sample: pd.DataFrame = self.get_sample_dataframe()
+        df_sample: pd.DataFrame = self._get_sample_dataframe()
 
         train_texts, test_texts, train_labels, test_labels = train_test_split(
             df_sample["cleaned_text"], df_sample["labels"], test_size=0.2, random_state=42
