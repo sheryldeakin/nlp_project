@@ -4,3 +4,5 @@ bert_emotions_results/
 __pycache__/
 
 .venv/
+
+.env
