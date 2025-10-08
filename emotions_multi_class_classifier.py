@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 # Load dataset
-df = pd.read_csv("data/go_emotions_dataset.csv")  # Update with the correct path
+df = pd.read_csv("resources/csv_files/go_emotions_dataset.csv")  # Update with the correct path
 
 # Display first few rows
 print(df.head())
@@ -116,7 +116,7 @@ mispell_dict = {'colour': 'color', 'centre': 'center', 'favourite': 'favorite', 
                 'howdoes': 'how does',
                 'mastrubation': 'masturbation', 'mastrubate': 'masturbate', "mastrubating": 'masturbating',
                 'pennis': 'penis', 'Etherium': 'Ethereum',
-                'narcissit': 'narcissist', 'bigdata': 'big data', '2k17': '2017', '2k18': '2018', 'qouta': 'quota',
+                'narcissit': 'narcissist', 'bigdata': 'big resources', '2k17': '2017', '2k18': '2018', 'qouta': 'quota',
                 'exboyfriend': 'ex boyfriend',
                 'airhostess': 'air hostess', "whst": 'what', 'watsapp': 'whatsapp', 'demonitisation': 'demonetization',
                 'demonitization': 'demonetization',
@@ -718,7 +718,7 @@ def run_mlp_bert(X_train_bert, X_test_bert, train_labels, test_labels, layer_dim
     num_classes = train_labels.shape[1]
     model = MLPClassifier(input_dim=768, layer_dims=layer_dims, num_classes=num_classes)
 
-    save_path = f"data/best_mlp_model_{label}.pt"
+    save_path = f"resources/best_mlp_model_{label}.pt"
 
     # # Load best model for final evaluation
     # if os.path.exists(save_path):
@@ -965,7 +965,7 @@ def run_cnn_bert(X_train_bert, X_test_bert, train_labels, test_labels, conv_conf
 
     num_classes = train_labels.shape[1]
     model = CNNClassifier(input_dim=768, num_classes=num_classes, conv_configs=conv_configs, dropout=dropout)
-    save_path = f"data/best_cnn_model_{label}.pt"
+    save_path = f"resources/best_cnn_model_{label}.pt"
 
     # Compute class frequencies
     label_counts = np.sum(train_labels, axis=0)
@@ -1104,7 +1104,7 @@ def run_lstm_bert(X_train_bert, X_test_bert, train_labels, test_labels, hidden_d
     weights = total / (label_counts + 1e-6)
     weights = torch.tensor(weights, dtype=torch.float32)
 
-    save_path = f"data/best_lstm_model_{label}.pt"
+    save_path = f"resources/best_lstm_model_{label}.pt"
 
     # if os.path.exists(save_path):
     #     model.load_state_dict(torch.load(save_path))
@@ -1354,7 +1354,7 @@ def run_finetuned_bert_model(train_texts, test_texts, train_labels, test_labels,
     model.num_labels = train_labels.shape[1]
 
     # model = BERTClassifier("fine_tuned_bert_emotions", num_classes=train_labels.shape[1], dropout=dropout)
-    save_path = f"data/best_finetuned_bert_model_{label}.pt"
+    save_path = f"resources/best_finetuned_bert_model_{label}.pt"
 
     if os.path.exists(save_path):
         model.load_state_dict(torch.load(save_path))

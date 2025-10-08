@@ -53,7 +53,7 @@ def build_label_dict_with_sentiment(filepath, category_col, label_col, example_c
     return label_dict
 
 # Load the Reddit dataset
-reddit_df = pd.read_csv("data/reddit_mental_health_data.csv")
+reddit_df = pd.read_csv("resources/reddit_mental_health_data.csv")
 reddit_df["text"] = reddit_df["text"].astype(str).fillna("")
 
 # Helper function to build label dictionary from CSV
@@ -154,14 +154,14 @@ def print_sample_labels(df, label_col, n=5):
 
 # Run the pipeline for each category
 # Keyword-based labeling
-triggers_keywords = process_labels(reddit_df, "data/Triggers - Sheet1.csv", "Trigger Categories", "Triggers", "triggers", use_sentiment=False)
-themes_keywords = process_labels(reddit_df, "data/Themes - Sheet1.csv", "Theme Categories", "Themes", "themes", use_sentiment=False)
-symptoms_keywords = process_labels(reddit_df, "data/Symptoms - Sheet1.csv", "Symptom Categories", "Symptoms", "symptoms", use_sentiment=False)
+triggers_keywords = process_labels(reddit_df, "resources/Triggers - Sheet1.csv", "Trigger Categories", "Triggers", "triggers", use_sentiment=False)
+themes_keywords = process_labels(reddit_df, "resources/Themes - Sheet1.csv", "Theme Categories", "Themes", "themes", use_sentiment=False)
+symptoms_keywords = process_labels(reddit_df, "resources/Symptoms - Sheet1.csv", "Symptom Categories", "Symptoms", "symptoms", use_sentiment=False)
 
 # Sentiment-augmented labeling
-triggers_sentiment = process_labels(reddit_df, "data/Triggers - Sheet1.csv", "Trigger Categories", "Triggers", "triggers", use_sentiment=True)
-themes_sentiment = process_labels(reddit_df, "data/Themes - Sheet1.csv", "Theme Categories", "Themes", "themes", use_sentiment=True)
-symptoms_sentiment = process_labels(reddit_df, "data/Symptoms - Sheet1.csv", "Symptom Categories", "Symptoms", "symptoms", use_sentiment=True)
+triggers_sentiment = process_labels(reddit_df, "resources/Triggers - Sheet1.csv", "Trigger Categories", "Triggers", "triggers", use_sentiment=True)
+themes_sentiment = process_labels(reddit_df, "resources/Themes - Sheet1.csv", "Theme Categories", "Themes", "themes", use_sentiment=True)
+symptoms_sentiment = process_labels(reddit_df, "resources/Symptoms - Sheet1.csv", "Symptom Categories", "Symptoms", "symptoms", use_sentiment=True)
 
 
 print_sample_labels(triggers_keywords, "triggers_label_keywords")

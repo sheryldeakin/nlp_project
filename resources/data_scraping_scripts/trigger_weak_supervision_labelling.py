@@ -37,7 +37,7 @@ df["trigger_label"] = df["text"].apply(label_triggers)
 
 # **Now, this captures multiple triggers per text entry!**
 
-# Show labeled data
+# Show labeled resources
 print(df[["text", "trigger_label"]].head())
 
 # Filter dataset where trigger_label is not ["No Trigger Found"]

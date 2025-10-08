@@ -450,7 +450,7 @@ label_encoder = LabelEncoder()
 train_labels_encoded = label_encoder.fit_transform(train_labels)
 test_labels_encoded = label_encoder.transform(test_labels)
 
-# Convert data to PyTorch tensors
+# Convert resources to PyTorch tensors
 X_train_tensor = torch.tensor(X_train_bert, dtype=torch.float32)
 X_test_tensor = torch.tensor(X_test_bert, dtype=torch.float32)
 y_train_tensor = torch.tensor(train_labels_encoded, dtype=torch.long)

@@ -15,7 +15,7 @@ print(torch.cuda.current_device())  # Should return: 0
 print(torch.cuda.device_count())  # Should return: 1 (or more if multi-GPU)
 
 # Load dataset
-df = pd.read_csv("data/go_emotions_dataset.csv")
+df = pd.read_csv("resources/csv_files/go_emotions_dataset.csv")
 
 # Remove unnecessary columns
 df = df.drop(columns=["id", "example_very_unclear"])
