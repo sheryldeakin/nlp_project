@@ -1,7 +1,5 @@
-import os
 import numpy as np
 import pandas as pd
-
 
 # Load dataset
 df = pd.read_csv("data/go_emotions_dataset.csv")  # Update with the correct path
@@ -26,20 +24,17 @@ df = df[["text", "labels"]]
 print(df.head())  # Verify labels are lists like [0,1,0,0,...]
 
 # For initial testing, take a smaller sample
-df_sample = df.sample(n=10000, random_state=42)  
+df_sample = df.sample(n=10000, random_state=42)
 
 from sklearn.model_selection import train_test_split
 
 ###########################################################################################
 # Pre-Cleaning
 ###########################################################################################
-import preprocessor
-import contractions
 import re
 from nltk.corpus import stopwords
 import nltk
 from nltk.stem import WordNetLemmatizer
-from nltk.corpus import wordnet
 
 nltk.download('wordnet')
 lemmatizer = WordNetLemmatizer()
@@ -49,60 +44,97 @@ stop_words = set(stopwords.words("english"))
 
 slang_dict = {"brb": "be right back", "idk": "I don't know", "u": "you"}
 
-contraction_mapping = {"ain't": "is not", "aren't": "are not","can't": "cannot", "'cause": "because", "could've": "could have", "couldn't": "could not", 
-                       "didn't": "did not",  "doesn't": "does not", "don't": "do not", "hadn't": "had not", "hasn't": "has not", "haven't": "have not", 
-                       "he'd": "he would","he'll": "he will", "he's": "he is", "how'd": "how did", "how'd'y": "how do you", "how'll": "how will", 
-                       "how's": "how is",  "I'd": "I would", "I'd've": "I would have", "I'll": "I will", "I'll've": "I will have","I'm": "I am",
-                       "I've": "I have", "i'd": "i would", "i'd've": "i would have", "i'll": "i will",  "i'll've": "i will have","i'm": "i am", 
-                       "i've": "i have", "isn't": "is not", "it'd": "it would", "it'd've": "it would have", "it'll": "it will", "it'll've": "it will have",
-                       "it's": "it is", "let's": "let us", "ma'am": "madam", "mayn't": "may not", "might've": "might have","mightn't": "might not",
-                       "mightn't've": "might not have", "must've": "must have", "mustn't": "must not", "mustn't've": "must not have", "needn't": "need not", 
-                       "needn't've": "need not have","o'clock": "of the clock", "oughtn't": "ought not", "oughtn't've": "ought not have", "shan't": "shall not",
-                       "sha'n't": "shall not", "shan't've": "shall not have", "she'd": "she would", "she'd've": "she would have", "she'll": "she will", 
-                       "she'll've": "she will have", "she's": "she is", "should've": "should have", "shouldn't": "should not", "shouldn't've": "should not have",
-                       "so've": "so have","so's": "so as", "this's": "this is","that'd": "that would", "that'd've": "that would have", "that's": "that is",
-                       "there'd": "there would", "there'd've": "there would have", "there's": "there is", "here's": "here is","they'd": "they would",
-                       "they'd've": "they would have", "they'll": "they will", "they'll've": "they will have", "they're": "they are", "they've": "they have",
-                       "to've": "to have", "wasn't": "was not", "we'd": "we would", "we'd've": "we would have", "we'll": "we will", "we'll've": "we will have",
-                       "we're": "we are", "we've": "we have", "weren't": "were not", "what'll": "what will", "what'll've": "what will have", 
-                       "what're": "what are",  "what's": "what is", "what've": "what have", "when's": "when is", "when've": "when have", "where'd": "where did",
-                       "where's": "where is", "where've": "where have", "who'll": "who will", "who'll've": "who will have", "who's": "who is", 
-                       "who've": "who have", "why's": "why is", "why've": "why have", "will've": "will have", "won't": "will not", "won't've": "will not have", 
-                       "would've": "would have", "wouldn't": "would not", "wouldn't've": "would not have", "y'all": "you all", "y'all'd": "you all would",
-                       "y'all'd've": "you all would have","y'all're": "you all are","y'all've": "you all have","you'd": "you would", "you'd've": "you would have",
-                       "you'll": "you will", "you'll've": "you will have", "you're": "you are", "you've": "you have", 'u.s':'america', 'e.g':'for example'}
+contraction_mapping = {"ain't": "is not", "aren't": "are not", "can't": "cannot", "'cause": "because",
+                       "could've": "could have", "couldn't": "could not",
+                       "didn't": "did not", "doesn't": "does not", "don't": "do not", "hadn't": "had not",
+                       "hasn't": "has not", "haven't": "have not",
+                       "he'd": "he would", "he'll": "he will", "he's": "he is", "how'd": "how did",
+                       "how'd'y": "how do you", "how'll": "how will",
+                       "how's": "how is", "I'd": "I would", "I'd've": "I would have", "I'll": "I will",
+                       "I'll've": "I will have", "I'm": "I am",
+                       "I've": "I have", "i'd": "i would", "i'd've": "i would have", "i'll": "i will",
+                       "i'll've": "i will have", "i'm": "i am",
+                       "i've": "i have", "isn't": "is not", "it'd": "it would", "it'd've": "it would have",
+                       "it'll": "it will", "it'll've": "it will have",
+                       "it's": "it is", "let's": "let us", "ma'am": "madam", "mayn't": "may not",
+                       "might've": "might have", "mightn't": "might not",
+                       "mightn't've": "might not have", "must've": "must have", "mustn't": "must not",
+                       "mustn't've": "must not have", "needn't": "need not",
+                       "needn't've": "need not have", "o'clock": "of the clock", "oughtn't": "ought not",
+                       "oughtn't've": "ought not have", "shan't": "shall not",
+                       "sha'n't": "shall not", "shan't've": "shall not have", "she'd": "she would",
+                       "she'd've": "she would have", "she'll": "she will",
+                       "she'll've": "she will have", "she's": "she is", "should've": "should have",
+                       "shouldn't": "should not", "shouldn't've": "should not have",
+                       "so've": "so have", "so's": "so as", "this's": "this is", "that'd": "that would",
+                       "that'd've": "that would have", "that's": "that is",
+                       "there'd": "there would", "there'd've": "there would have", "there's": "there is",
+                       "here's": "here is", "they'd": "they would",
+                       "they'd've": "they would have", "they'll": "they will", "they'll've": "they will have",
+                       "they're": "they are", "they've": "they have",
+                       "to've": "to have", "wasn't": "was not", "we'd": "we would", "we'd've": "we would have",
+                       "we'll": "we will", "we'll've": "we will have",
+                       "we're": "we are", "we've": "we have", "weren't": "were not", "what'll": "what will",
+                       "what'll've": "what will have",
+                       "what're": "what are", "what's": "what is", "what've": "what have", "when's": "when is",
+                       "when've": "when have", "where'd": "where did",
+                       "where's": "where is", "where've": "where have", "who'll": "who will",
+                       "who'll've": "who will have", "who's": "who is",
+                       "who've": "who have", "why's": "why is", "why've": "why have", "will've": "will have",
+                       "won't": "will not", "won't've": "will not have",
+                       "would've": "would have", "wouldn't": "would not", "wouldn't've": "would not have",
+                       "y'all": "you all", "y'all'd": "you all would",
+                       "y'all'd've": "you all would have", "y'all're": "you all are", "y'all've": "you all have",
+                       "you'd": "you would", "you'd've": "you would have",
+                       "you'll": "you will", "you'll've": "you will have", "you're": "you are", "you've": "you have",
+                       'u.s': 'america', 'e.g': 'for example'}
 
-punct = [',', '.', '"', ':', ')', '(', '-', '!', '?', '|', ';', "'", '$', '&', '/', '[', ']', '>', '%', '=', '#', '*', '+', '\\', '•',  '~', '@', '£', 
- '·', '_', '{', '}', '©', '^', '®', '`',  '<', '→', '°', '€', '™', '›',  '♥', '←', '×', '§', '″', '′', 'Â', '█', '½', 'à', '…', 
- '“', '★', '”', '–', '●', 'â', '►', '−', '¢', '²', '¬', '░', '¶', '↑', '±', '¿', '▾', '═', '¦', '║', '―', '¥', '▓', '—', '‹', '─', 
- '▒', '：', '¼', '⊕', '▼', '▪', '†', '■', '’', '▀', '¨', '▄', '♫', '☆', 'é', '¯', '♦', '¤', '▲', 'è', '¸', '¾', 'Ã', '⋅', '‘', '∞', 
- '∙', '）', '↓', '、', '│', '（', '»', '，', '♪', '╩', '╚', '³', '・', '╦', '╣', '╔', '╗', '▬', '❤', 'ï', 'Ø', '¹', '≤', '‡', '√', ]
+punct = [',', '.', '"', ':', ')', '(', '-', '!', '?', '|', ';', "'", '$', '&', '/', '[', ']', '>', '%', '=', '#', '*',
+         '+', '\\', '•', '~', '@', '£',
+         '·', '_', '{', '}', '©', '^', '®', '`', '<', '→', '°', '€', '™', '›', '♥', '←', '×', '§', '″', '′', 'Â', '█',
+         '½', 'à', '…',
+         '“', '★', '”', '–', '●', 'â', '►', '−', '¢', '²', '¬', '░', '¶', '↑', '±', '¿', '▾', '═', '¦', '║', '―', '¥',
+         '▓', '—', '‹', '─',
+         '▒', '：', '¼', '⊕', '▼', '▪', '†', '■', '’', '▀', '¨', '▄', '♫', '☆', 'é', '¯', '♦', '¤', '▲', 'è', '¸', '¾',
+         'Ã', '⋅', '‘', '∞',
+         '∙', '）', '↓', '、', '│', '（', '»', '，', '♪', '╩', '╚', '³', '・', '╦', '╣', '╔', '╗', '▬', '❤', 'ï', 'Ø', '¹',
+         '≤', '‡', '√', ]
 
-punct_mapping = {"‘": "'", "₹": "e", "´": "'", "°": "", "€": "e", "™": "tm", "√": " sqrt ", "×": "x", "²": "2", "—": "-", "–": "-", "’": "'", "_": "-",
-                 "`": "'", '“': '"', '”': '"', '“': '"', "£": "e", '∞': 'infinity', 'θ': 'theta', '÷': '/', 'α': 'alpha', '•': '.', 'à': 'a', '−': '-', 
-                 'β': 'beta', '∅': '', '³': '3', 'π': 'pi', '!':' '}
+punct_mapping = {"‘": "'", "₹": "e", "´": "'", "°": "", "€": "e", "™": "tm", "√": " sqrt ", "×": "x", "²": "2",
+                 "—": "-", "–": "-", "’": "'", "_": "-",
+                 "`": "'", '“': '"', '”': '"', '“': '"', "£": "e", '∞': 'infinity', 'θ': 'theta', '÷': '/',
+                 'α': 'alpha', '•': '.', 'à': 'a', '−': '-',
+                 'β': 'beta', '∅': '', '³': '3', 'π': 'pi', '!': ' '}
 
-mispell_dict = {'colour': 'color', 'centre': 'center', 'favourite': 'favorite', 'travelling': 'traveling', 'counselling': 'counseling', 'theatre': 'theater',
-                'cancelled': 'canceled', 'labour': 'labor', 'organisation': 'organization', 'wwii': 'world war 2', 'citicise': 'criticize', 'youtu ': 'youtube ',
-                'Qoura': 'Quora', 'sallary': 'salary', 'Whta': 'What', 'narcisist': 'narcissist', 'howdo': 'how do', 'whatare': 'what are', 'howcan': 'how can',
-                'howmuch': 'how much', 'howmany': 'how many', 'whydo': 'why do', 'doI': 'do I', 'theBest': 'the best', 'howdoes': 'how does', 
-                'mastrubation': 'masturbation', 'mastrubate': 'masturbate', "mastrubating": 'masturbating', 'pennis': 'penis', 'Etherium': 'Ethereum', 
-                'narcissit': 'narcissist', 'bigdata': 'big data', '2k17': '2017', '2k18': '2018', 'qouta': 'quota', 'exboyfriend': 'ex boyfriend', 
-                'airhostess': 'air hostess', "whst": 'what', 'watsapp': 'whatsapp', 'demonitisation': 'demonetization', 'demonitization': 'demonetization',
+mispell_dict = {'colour': 'color', 'centre': 'center', 'favourite': 'favorite', 'travelling': 'traveling',
+                'counselling': 'counseling', 'theatre': 'theater',
+                'cancelled': 'canceled', 'labour': 'labor', 'organisation': 'organization', 'wwii': 'world war 2',
+                'citicise': 'criticize', 'youtu ': 'youtube ',
+                'Qoura': 'Quora', 'sallary': 'salary', 'Whta': 'What', 'narcisist': 'narcissist', 'howdo': 'how do',
+                'whatare': 'what are', 'howcan': 'how can',
+                'howmuch': 'how much', 'howmany': 'how many', 'whydo': 'why do', 'doI': 'do I', 'theBest': 'the best',
+                'howdoes': 'how does',
+                'mastrubation': 'masturbation', 'mastrubate': 'masturbate', "mastrubating": 'masturbating',
+                'pennis': 'penis', 'Etherium': 'Ethereum',
+                'narcissit': 'narcissist', 'bigdata': 'big data', '2k17': '2017', '2k18': '2018', 'qouta': 'quota',
+                'exboyfriend': 'ex boyfriend',
+                'airhostess': 'air hostess', "whst": 'what', 'watsapp': 'whatsapp', 'demonitisation': 'demonetization',
+                'demonitization': 'demonetization',
                 'demonetisation': 'demonetization'}
 
 import emoji
 from bs4 import BeautifulSoup
 import string
 
+
 def clean_text(text):
     '''Clean emoji, Make text lowercase, remove text in square brackets,remove links,remove punctuation
     and remove words containing numbers.'''
     text = emoji.demojize(text)
-    text = re.sub(r'\:(.*?)\:','',text)
-    text = str(text).lower()    #Making Text Lowercase
+    text = re.sub(r'\:(.*?)\:', '', text)
+    text = str(text).lower()  # Making Text Lowercase
     text = re.sub('\[.*?\]', '', text)
-    #The next 2 lines remove html text
+    # The next 2 lines remove html text
     text = BeautifulSoup(text, 'lxml').get_text()
     text = re.sub('https?://\S+|www\.\S+', '', text)
     text = re.sub('<.*?>+', '', text)
@@ -112,15 +144,16 @@ def clean_text(text):
     text = re.sub(r"[^a-zA-Z?.!,¿']+", " ", text)
     return text
 
+
 def clean_contractions(text, mapping):
-    '''Clean contraction using contraction mapping'''    
+    '''Clean contraction using contraction mapping'''
     specials = ["’", "‘", "´", "`"]
     for s in specials:
         text = text.replace(s, "'")
     for word in mapping.keys():
-        if ""+word+"" in text:
-            text = text.replace(""+word+"", ""+mapping[word]+"")
-    #Remove Punctuations
+        if "" + word + "" in text:
+            text = text.replace("" + word + "", "" + mapping[word] + "")
+    # Remove Punctuations
     text = re.sub('[%s]' % re.escape(string.punctuation), '', text)
     # creating a space between a word and the punctuation following it
     # eg: "he is a boy." => "he is a boy ."
@@ -128,32 +161,36 @@ def clean_contractions(text, mapping):
     text = re.sub(r'[" "]+', " ", text)
     return text
 
+
 def clean_special_chars(text, punct, mapping):
-    '''Cleans special characters present(if any)'''   
+    '''Cleans special characters present(if any)'''
     for p in mapping:
         text = text.replace(p, mapping[p])
-    
+
     for p in punct:
         text = text.replace(p, f' {p} ')
-    
-    specials = {'\u200b': ' ', '…': ' ... ', '\ufeff': '', 'करना': '', 'है': ''}  
+
+    specials = {'\u200b': ' ', '…': ' ... ', '\ufeff': '', 'करना': '', 'है': ''}
     for s in specials:
         text = text.replace(s, specials[s])
-    
+
     return text
 
+
 def correct_spelling(x, dic):
-    '''Corrects common spelling errors'''   
+    '''Corrects common spelling errors'''
     for word in dic.keys():
         x = x.replace(word, dic[word])
     return x
 
+
 def remove_space(text):
-    '''Removes awkward spaces'''   
-    #Removes awkward spaces 
+    '''Removes awkward spaces'''
+    # Removes awkward spaces
     text = text.strip()
     text = text.split()
     return " ".join(text)
+
 
 def text_preprocessing_pipeline(text):
     '''Cleaning and parsing the text.'''
@@ -163,6 +200,7 @@ def text_preprocessing_pipeline(text):
     text = correct_spelling(text, mispell_dict)
     text = remove_space(text)
     return text
+
 
 # Apply text cleaning to dataset
 df_sample["cleaned_text"] = df_sample["text"].apply(text_preprocessing_pipeline)
@@ -200,9 +238,7 @@ X_test_tfidf = vectorizer.transform(test_texts)
 ###########################################################################################
 # Logistic Regression
 ###########################################################################################
-from sklearn.linear_model import LogisticRegression
-from sklearn.multiclass import OneVsRestClassifier
-from sklearn.metrics import accuracy_score, f1_score, precision_recall_fscore_support
+
 
 def run_logistic_regression_tfidf(X_train_tfidf, X_test_tfidf, train_labels, test_labels):
     print("------------------ Logistic Regression + TFIDF ------------------")
@@ -230,20 +266,18 @@ def run_logistic_regression_tfidf(X_train_tfidf, X_test_tfidf, train_labels, tes
 
     best_epoch_f1_micro = np.argmax(history["test_f1_micro"])
     best_f1_micro_test_accuracy = history["test_f1_micro"][best_epoch_f1_micro]
-    best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro]   
+    best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro]
 
     print(f"LogReg + TFIDF | Acc: {accuracy:.4f} | F1 Micro: {f1_micro:.4f} | F1 Macro: {f1_macro:.4f}")
     return history, f1_micro, f1_macro, f1_micro, f1_macro, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
-
 
 
 ###########################################################################################
 # SVM
 ###########################################################################################
 
-from sklearn.svm import SVC
 from sklearn.multiclass import OneVsRestClassifier
-from sklearn.metrics import f1_score
+
 
 def run_svm_tfidf(X_train_tfidf, X_test_tfidf, train_labels, test_labels):
     print("------------------ SVM + TFIDF ------------------")
@@ -269,42 +303,40 @@ def run_svm_tfidf(X_train_tfidf, X_test_tfidf, train_labels, test_labels):
             "test_accuracy": [accuracy],
         }
 
-
         best_epoch_test_accuracy = np.argmax(history["test_accuracy"])
         best_accuracy_f1_micro_test_accuracy = history["test_f1_micro"][best_epoch_test_accuracy]
         best_accuracy_test_accuracy = history["test_accuracy"][best_epoch_test_accuracy]
 
         best_epoch_f1_micro = np.argmax(history["test_f1_micro"])
         best_f1_micro_test_accuracy = history["test_f1_micro"][best_epoch_f1_micro]
-        best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro]   
+        best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro]
 
         print(f"{label} | Acc: {accuracy:.4f} | F1 Micro: {f1_micro:.4f} | F1 Macro: {f1_macro:.4f}")
-        results[label] = (history, f1_micro, f1_macro, f1_micro, f1_macro, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy)
+        results[label] = (
+        history, f1_micro, f1_macro, f1_micro, f1_macro, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy,
+        best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy)
 
-    return results   # dict of kernel: (history, ...)
+    return results  # dict of kernel: (history, ...)
 
 
 ###########################################################################################
 # Using BERT to expand text instead of TF-IDF
 ###########################################################################################
-import torch
-from transformers import BertTokenizer, BertModel
+from transformers import BertModel
 from tqdm import tqdm
 import numpy as np
 
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer
 
-from huggingface_hub import login
-
-
-# Load pre-trained BERT tokenizer & model - Baseline BERT model 
+# Load pre-trained BERT tokenizer & model - Baseline BERT model
 # tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 # bert_model = BertModel.from_pråetrained("bert-base-uncased")
 
 num_labels = len(emotion_columns)
 print(f"num_labels: {num_labels}")
 
-from transformers import BertForSequenceClassification, BertTokenizer
+from transformers import BertForSequenceClassification
+
 # tokenizer = AutoTokenizer.from_pretrained("fine_tuned_bert_emotions")
 tokenizer = AutoTokenizer.from_pretrained("sdeakin/fine_tuned_bert_emotions")
 
@@ -312,13 +344,14 @@ tokenizer = AutoTokenizer.from_pretrained("sdeakin/fine_tuned_bert_emotions")
 
 # Load BERT model with sigmoid activation for multi-label classification
 bert_model = BertForSequenceClassification.from_pretrained(
-    "sdeakin/fine_tuned_bert_emotions", 
-    num_labels=num_labels, 
+    "sdeakin/fine_tuned_bert_emotions",
+    num_labels=num_labels,
     problem_type="multi_label_classification",
     ignore_mismatched_sizes=True
-    )
+)
 
 from transformers import BertTokenizer
+
 
 # tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 
@@ -332,15 +365,13 @@ def encode_texts(texts, tokenizer, max_length=512):
     )
 
 
-import torch
-
 def get_bert_embeddings(text_list, batch_size=128):
     """Tokenize text and extract BERT embeddings ensuring all samples are processed."""
     embeddings = []
-    
+
     total_batches = len(text_list) // batch_size + int(len(text_list) % batch_size != 0)
-    
-    print(f" Total texts to process: {len(text_list)}") 
+
+    print(f" Total texts to process: {len(text_list)}")
     print(f" Total batches expected: {total_batches}")
 
     with torch.no_grad():
@@ -348,7 +379,7 @@ def get_bert_embeddings(text_list, batch_size=128):
             if i + batch_size > len(text_list):  # Ensure last batch is fully processed
                 batch_texts = text_list[i:]
             else:
-                batch_texts = text_list[i : i + batch_size]
+                batch_texts = text_list[i: i + batch_size]
 
             # Tokenize batch
             # tokens = tokenizer(batch_texts, padding=True, truncation=True, return_tensors="pt", max_length=512)
@@ -369,7 +400,7 @@ def get_bert_embeddings(text_list, batch_size=128):
 
     # **Check final shape**
     print(f" Expected embeddings: {len(text_list)}, Extracted embeddings: {embeddings.shape[0]}")
-    
+
     return embeddings
 
 
@@ -383,7 +414,6 @@ X_test_bert = get_bert_embeddings(test_texts, batch_size=32)
 # ###########################################################################################
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, f1_score
 
 
 def run_logistic_regression_bert(X_train_bert, X_test_bert, train_labels, test_labels):
@@ -395,7 +425,6 @@ def run_logistic_regression_bert(X_train_bert, X_test_bert, train_labels, test_l
 
     train_labels_multiclass = np.argmax(train_labels, axis=1)
     test_labels_multiclass = np.argmax(test_labels, axis=1)
-
 
     clf = LogisticRegression(max_iter=1000)
     clf.fit(X_train_flat, train_labels_multiclass)
@@ -419,8 +448,8 @@ def run_logistic_regression_bert(X_train_bert, X_test_bert, train_labels, test_l
 
     best_epoch_f1_micro = np.argmax(history["test_f1_micro"])
     best_f1_micro_test_accuracy = history["test_f1_micro"][best_epoch_f1_micro]
-    best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro]   
- 
+    best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro]
+
     print(f"LogReg + BERT | Acc: {accuracy:.4f} | F1 Micro: {f1_micro:.4f} | F1 Macro: {f1_macro:.4f}")
     return history, f1_micro, f1_macro, f1_micro, f1_macro, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
 
@@ -430,7 +459,7 @@ def run_logistic_regression_bert(X_train_bert, X_test_bert, train_labels, test_l
 ###########################################################################################
 
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score
+
 
 def run_svm_bert(X_train_bert, X_test_bert, train_labels, test_labels):
     print("------------------ SVM + BERT ------------------")
@@ -439,7 +468,6 @@ def run_svm_bert(X_train_bert, X_test_bert, train_labels, test_labels):
 
     X_train_flat = X_train_bert.mean(axis=1)
     X_test_flat = X_test_bert.mean(axis=1)
-
 
     for kernel in kernels:
         print(f"\nTraining SVM + BERT with {kernel} kernel...")
@@ -466,10 +494,12 @@ def run_svm_bert(X_train_bert, X_test_bert, train_labels, test_labels):
 
         best_epoch_f1_micro = np.argmax(history["test_f1_micro"])
         best_f1_micro_test_accuracy = history["test_f1_micro"][best_epoch_f1_micro]
-        best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro]  
+        best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro]
 
         print(f"{label} | Acc: {accuracy:.4f} | F1 Micro: {f1_micro:.4f} | F1 Macro: {f1_macro:.4f}")
-        results[label] = (history, f1_micro, f1_macro, f1_micro, f1_macro, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy)
+        results[label] = (
+        history, f1_micro, f1_macro, f1_micro, f1_macro, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy,
+        best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy)
 
     return results
 
@@ -478,12 +508,10 @@ def run_svm_bert(X_train_bert, X_test_bert, train_labels, test_labels):
 # MLP + BERT (Multiclass)
 ###########################################################################################
 
-import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
-from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import accuracy_score, f1_score
+
 
 # Define MLP Classifier for Multiclass
 class MLPClassifier(nn.Module):
@@ -497,7 +525,7 @@ class MLPClassifier(nn.Module):
             layers.append(nn.Linear(current_dim, dim))
             layers.append(nn.BatchNorm1d(dim))  # USE BATCH NORM 1 or 2D check both
             layers.append(nn.ReLU())
-            layers.append(nn.Dropout(0.3)) # DOn't use drop out originally, unless I get good enough results
+            layers.append(nn.Dropout(0.3))  # DOn't use drop out originally, unless I get good enough results
             current_dim = dim
 
         layers.append(nn.Linear(current_dim, num_classes))
@@ -506,8 +534,8 @@ class MLPClassifier(nn.Module):
     def forward(self, x):
         return self.network(x)
 
-def prepare_mlp_dataloader(X_train_bert, X_test_bert, train_labels, test_labels, batch_size=64):
 
+def prepare_mlp_dataloader(X_train_bert, X_test_bert, train_labels, test_labels, batch_size=64):
     # Convert labels to numerical format for Multiclass Classification
     X_train_tensor = torch.tensor(X_train_bert, dtype=torch.float32)
     X_test_tensor = torch.tensor(X_test_bert, dtype=torch.float32)
@@ -521,6 +549,7 @@ def prepare_mlp_dataloader(X_train_bert, X_test_bert, train_labels, test_labels,
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     return train_loader, test_loader
+
 
 def train_mlp_model(model, train_loader, test_loader, device, num_epochs, save_path):
     optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
@@ -549,7 +578,7 @@ def train_mlp_model(model, train_loader, test_loader, device, num_epochs, save_p
         total_loss = 0
 
         y_true_train, y_pred_train = [], []
- 
+
         for X_batch, y_batch in train_loader:
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
             optimizer.zero_grad()
@@ -563,7 +592,7 @@ def train_mlp_model(model, train_loader, test_loader, device, num_epochs, save_p
             preds = (probs > 0.5).int().cpu().numpy()
             y_pred_train.extend(preds)
             y_true_train.extend(y_batch.cpu().numpy())
-        
+
         train_f1_micro = f1_score(y_true_train, y_pred_train, average="micro")
         history["train_loss"].append(total_loss)
         history["train_f1_micro"].append(train_f1_micro)
@@ -586,34 +615,34 @@ def train_mlp_model(model, train_loader, test_loader, device, num_epochs, save_p
         test_accuracy = accuracy_score(np.array(y_true_test), np.array(y_pred_test))
         history["test_accuracy"].append(test_accuracy)
 
-        print(f"Epoch {epoch+1}/{num_epochs} - Loss: {total_loss:.4f} | Train Acc: {train_accuracy:.4f} | Train F1: {train_f1_micro:.4f} | Test Acc: {test_accuracy:.4f} | Test F1: {test_f1_micro:.4f}")
+        print(
+            f"Epoch {epoch + 1}/{num_epochs} - Loss: {total_loss:.4f} | Train Acc: {train_accuracy:.4f} | Train F1: {train_f1_micro:.4f} | Test Acc: {test_accuracy:.4f} | Test F1: {test_f1_micro:.4f}")
 
         # # Save best model
         # if test_f1_micro > best_f1:
         #     best_f1 = test_f1_micro
         #     torch.save(model.state_dict(), save_path)
         #     print(f"New best model saved (Test F1 Micro: {test_f1_micro:.4f})")
-        
+
         best_epoch_test_accuracy = np.argmax(history["test_accuracy"])
         best_accuracy_f1_micro_test_accuracy = history["test_f1_micro"][best_epoch_test_accuracy]
         best_accuracy_test_accuracy = history["test_accuracy"][best_epoch_test_accuracy]
 
         best_epoch_f1_micro = np.argmax(history["test_f1_micro"])
         best_f1_micro_test_accuracy = history["test_f1_micro"][best_epoch_f1_micro]
-        best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro]  
+        best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro]
 
     return history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
 
-import matplotlib.pyplot as plt
 
 def plot_training_history(history):
     epochs = range(1, len(history["train_loss"]) + 1)
 
     plt.figure(figsize=(10, 6))
-    
+
     plt.plot(epochs, history["train_f1_micro"], label="Train F1 (Micro)")
     plt.plot(epochs, history["test_f1_micro"], label="Test F1 (Micro)")
-    
+
     plt.xlabel("Epochs")
     plt.ylabel("F1 Score")
     plt.title("MLP Training Performance Over Epochs")
@@ -621,6 +650,7 @@ def plot_training_history(history):
     plt.grid(True)
     plt.tight_layout()
     plt.show()
+
 
 def evaluate_mlp_model(model, train_loader, test_loader, device, label_names):
     # Evaluate Model on Test Set
@@ -658,14 +688,13 @@ def evaluate_mlp_model(model, train_loader, test_loader, device, label_names):
         if isinstance(label_names, (list, np.ndarray)):
             emotion_labels = label_names.tolist() if isinstance(label_names, np.ndarray) else label_names
         else:
-            raise ValueError(f"Expected label_names to be a list or ndarray, but got: {type(label_names).__name__}, label_names: {label_names}")
-
-
+            raise ValueError(
+                f"Expected label_names to be a list or ndarray, but got: {type(label_names).__name__}, label_names: {label_names}")
 
         print("\nPer-class Precision / Recall / F1:")
         for idx, label in enumerate(emotion_labels):  # or custom label list
             print(f"{label:20s} | P: {precisions[idx]:.2f} | R: {recalls[idx]:.2f} | F1: {f1s[idx]:.2f}")
-        
+
         return mlp_f1_micro, mlp_f1_macro
 
     # Evaluate both train and test
@@ -680,7 +709,6 @@ def run_mlp_bert(X_train_bert, X_test_bert, train_labels, test_labels, layer_dim
 
     X_train_flat = X_train_bert.mean(axis=1)  # [num_samples, hidden_dim]
     X_test_flat = X_test_bert.mean(axis=1)
-
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_loader, test_loader = prepare_mlp_dataloader(
@@ -697,9 +725,13 @@ def run_mlp_bert(X_train_bert, X_test_bert, train_labels, test_labels, layer_dim
     #     model.load_state_dict(torch.load(save_path))
     #     print("\nLoaded best model from disk for final evaluation for {label}.")
 
-
-    history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy = train_mlp_model(model, train_loader, test_loader, device, num_epochs, save_path)
-    mlp_f1_micro_train, mlp_f1_macro_train, mlp_f1_micro_test, mlp_f1_macro_test = evaluate_mlp_model(model, train_loader, test_loader, device, label_names=label_names)
+    history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy = train_mlp_model(
+        model, train_loader, test_loader, device, num_epochs, save_path)
+    mlp_f1_micro_train, mlp_f1_macro_train, mlp_f1_micro_test, mlp_f1_macro_test = evaluate_mlp_model(model,
+                                                                                                      train_loader,
+                                                                                                      test_loader,
+                                                                                                      device,
+                                                                                                      label_names=label_names)
 
     return history, mlp_f1_micro_train, mlp_f1_macro_train, mlp_f1_micro_test, mlp_f1_macro_test, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
 
@@ -711,6 +743,7 @@ import torch.nn.functional as F
 
 import torch
 import torch.nn as nn
+
 
 class FocalLoss(nn.Module):
     def __init__(self, alpha=1, gamma=2, reduction='mean'):
@@ -734,7 +767,6 @@ class FocalLoss(nn.Module):
             return loss.sum()
         else:
             return loss
-
 
 
 class CNNClassifier(nn.Module):
@@ -770,7 +802,9 @@ class CNNClassifier(nn.Module):
         out = self.dropout(out)
         return self.fc(out)
 
-def train_cnn_model(model, train_loader, test_loader, device, num_epochs, save_path, lr=1e-4, loss_type="bce", weights=0):
+
+def train_cnn_model(model, train_loader, test_loader, device, num_epochs, save_path, lr=1e-4, loss_type="bce",
+                    weights=0):
     optimizer = optim.Adam(model.parameters(), lr=lr)
     loss_fn = nn.BCEWithLogitsLoss()
     best_f1 = 0.0
@@ -836,7 +870,8 @@ def train_cnn_model(model, train_loader, test_loader, device, num_epochs, save_p
         history["test_f1_micro"].append(test_f1)
         history["test_accuracy"].append(test_acc)
 
-        print(f"Epoch {epoch+1}/{num_epochs} - Loss: {total_loss:.4f} | Train Acc: {train_acc:.4f} | Train F1: {train_f1:.4f} | Test Acc: {test_acc:.4f} | Test F1: {test_f1:.4f}")
+        print(
+            f"Epoch {epoch + 1}/{num_epochs} - Loss: {total_loss:.4f} | Train Acc: {train_acc:.4f} | Train F1: {train_f1:.4f} | Test Acc: {test_acc:.4f} | Test F1: {test_f1:.4f}")
 
         # if test_f1 > best_f1:
         #     best_f1 = test_f1
@@ -849,13 +884,14 @@ def train_cnn_model(model, train_loader, test_loader, device, num_epochs, save_p
 
         best_epoch_f1_micro = np.argmax(history["test_f1_micro"])
         best_f1_micro_test_accuracy = history["test_f1_micro"][best_epoch_f1_micro]
-        best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro] 
+        best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro]
 
     return history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
 
 
 import pandas as pd
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_fscore_support
+
 
 def evaluate_cnn_model(model, train_loader, test_loader, device, label="cnn_model", label_names=""):
     def _evaluate(loader, split_name, label_names):
@@ -891,8 +927,8 @@ def evaluate_cnn_model(model, train_loader, test_loader, device, label="cnn_mode
         if isinstance(label_names, (list, np.ndarray)):
             emotion_labels = label_names.tolist() if isinstance(label_names, np.ndarray) else label_names
         else:
-            raise ValueError(f"Expected label_names to be a list or ndarray, but got: {type(label_names).__name__}, label_names: {label_names}")
-
+            raise ValueError(
+                f"Expected label_names to be a list or ndarray, but got: {type(label_names).__name__}, label_names: {label_names}")
 
         # Store per-class results
         df = pd.DataFrame({
@@ -921,8 +957,8 @@ def evaluate_cnn_model(model, train_loader, test_loader, device, label="cnn_mode
     return f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test
 
 
-
-def run_cnn_bert(X_train_bert, X_test_bert, train_labels, test_labels, conv_configs, label, num_epochs, dropout=0.3, lr=1e-4, loss_type='bce', label_names=""):
+def run_cnn_bert(X_train_bert, X_test_bert, train_labels, test_labels, conv_configs, label, num_epochs, dropout=0.3,
+                 lr=1e-4, loss_type='bce', label_names=""):
     print(f"------------------ CNN + BERT: {label} ------------------")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_loader, test_loader = prepare_mlp_dataloader(X_train_bert, X_test_bert, train_labels, test_labels)
@@ -943,10 +979,14 @@ def run_cnn_bert(X_train_bert, X_test_bert, train_labels, test_labels, conv_conf
     #     model.load_state_dict(torch.load(save_path))
     #     print(f"\nLoaded best CNN model for {label}.")
 
-    history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy = train_cnn_model(model, train_loader, test_loader, device, num_epochs, save_path, lr=lr, loss_type=loss_type, weights=weights)
-    f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test = evaluate_cnn_model(model, train_loader, test_loader, device, label=label, label_names=label_names)
+    history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy = train_cnn_model(
+        model, train_loader, test_loader, device, num_epochs, save_path, lr=lr, loss_type=loss_type, weights=weights)
+    f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test = evaluate_cnn_model(model, train_loader, test_loader,
+                                                                                      device, label=label,
+                                                                                      label_names=label_names)
 
     return history, f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
+
 
 # ###########################################################################################
 # # BiLSTM + BERT
@@ -960,7 +1000,6 @@ class BiLSTMClassifier(nn.Module):
         self.fc = nn.Linear(hidden_dim * 2, num_classes)  # bi-directional
         self.norm = nn.LayerNorm(hidden_dim * 2)  # Because BiLSTM doubles the hidden size
 
-
     def forward(self, x):
         # x: [batch_size, seq_len, input_dim] => typically [B, 64, 768]
         lstm_out, _ = self.lstm(x)
@@ -968,6 +1007,7 @@ class BiLSTMClassifier(nn.Module):
         pooled = self.norm(pooled)
         out = self.dropout(pooled)
         return self.fc(out)
+
 
 def train_lstm_model(model, train_loader, test_loader, device, num_epochs, save_path, lr=1e-8, weights=1):
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -1022,7 +1062,8 @@ def train_lstm_model(model, train_loader, test_loader, device, num_epochs, save_
         history["test_f1_micro"].append(test_f1)
         history["test_accuracy"].append(test_acc)
 
-        print(f"Epoch {epoch+1}/{num_epochs} - Loss: {total_loss:.4f} | Train Acc: {train_acc:.4f} | Train F1: {train_f1:.4f} | Test Acc: {test_acc:.4f} | Test F1: {test_f1:.4f}")
+        print(
+            f"Epoch {epoch + 1}/{num_epochs} - Loss: {total_loss:.4f} | Train Acc: {train_acc:.4f} | Train F1: {train_f1:.4f} | Test Acc: {test_acc:.4f} | Test F1: {test_f1:.4f}")
 
         # if test_f1 > best_f1:
         #     best_f1 = test_f1
@@ -1035,12 +1076,13 @@ def train_lstm_model(model, train_loader, test_loader, device, num_epochs, save_
 
         best_epoch_f1_micro = np.argmax(history["test_f1_micro"])
         best_f1_micro_test_accuracy = history["test_f1_micro"][best_epoch_f1_micro]
-        best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro] 
+        best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro]
 
     return history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
 
 
-def run_lstm_bert(X_train_bert, X_test_bert, train_labels, test_labels, hidden_dim, num_layers, dropout, lr, label, num_epochs=200, label_names=""):
+def run_lstm_bert(X_train_bert, X_test_bert, train_labels, test_labels, hidden_dim, num_layers, dropout, lr, label,
+                  num_epochs=200, label_names=""):
     print(f"------------------ BiLSTM + BERT: {label} ------------------")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_loader, test_loader = prepare_mlp_dataloader(X_train_bert, X_test_bert, train_labels, test_labels)
@@ -1052,8 +1094,8 @@ def run_lstm_bert(X_train_bert, X_test_bert, train_labels, test_labels, hidden_d
         num_layers=num_layers,
         num_classes=num_classes,
         dropout=dropout
-        )
-    
+    )
+
     # Compute class frequencies
     label_counts = np.sum(train_labels, axis=0)
     total = train_labels.shape[0]
@@ -1068,10 +1110,14 @@ def run_lstm_bert(X_train_bert, X_test_bert, train_labels, test_labels, hidden_d
     #     model.load_state_dict(torch.load(save_path))
     #     print(f"\nLoaded best BiLSTM model for {label}.")
 
-    history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy = train_lstm_model(model, train_loader, test_loader, device, num_epochs, save_path, lr=lr, weights=weights)
-    f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test = evaluate_cnn_model(model, train_loader, test_loader, device, label=label, label_names=label_names)
+    history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy = train_lstm_model(
+        model, train_loader, test_loader, device, num_epochs, save_path, lr=lr, weights=weights)
+    f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test = evaluate_cnn_model(model, train_loader, test_loader,
+                                                                                      device, label=label,
+                                                                                      label_names=label_names)
 
     return history, f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
+
 
 # ###########################################################################################
 # # Straight up BERT
@@ -1085,7 +1131,7 @@ def tokenize_for_bert(texts, tokenizer, max_length=64):
         return_tensors="pt"
     )
     return encodings["input_ids"], encodings["attention_mask"]
-from torch.utils.data import Dataset
+
 
 class EmotionDataset(torch.utils.data.Dataset):
     def __init__(self, texts, labels, tokenizer, max_length=64):
@@ -1102,6 +1148,7 @@ class EmotionDataset(torch.utils.data.Dataset):
             "labels": self.labels[idx]
         }
 
+
 def prepare_bert_dataloaders(train_texts, test_texts, train_labels, test_labels, tokenizer, batch_size=32):
     train_dataset = EmotionDataset(train_texts, train_labels, tokenizer)
     test_dataset = EmotionDataset(test_texts, test_labels, tokenizer)
@@ -1110,6 +1157,7 @@ def prepare_bert_dataloaders(train_texts, test_texts, train_labels, test_labels,
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     return train_loader, test_loader
+
 
 class BERTClassifier(nn.Module):
     def __init__(self, bert_model_name="sdeakin/fine_tuned_bert_emotions", num_classes=28, dropout=0.3):
@@ -1132,7 +1180,7 @@ class BERTClassifier(nn.Module):
     #     cls_output = outputs.last_hidden_state[:, 0, :]  # [CLS] token
     #     x = self.dropout(cls_output)
     #     return self.classifier(x)
-    
+
     def forward(self, input_ids, attention_mask):
         outputs = self.bert(input_ids=input_ids, attention_mask=attention_mask)
         sequence_output = outputs.last_hidden_state  # shape: [batch, seq_len, hidden]
@@ -1145,9 +1193,6 @@ class BERTClassifier(nn.Module):
     #     cls_output = outputs.last_hidden_state[:, 0, :]  # [CLS] token
     #     cls_output = self.dropout(cls_output)
     #     return self.classifier(cls_output)
-    
-
-    
 
 
 def train_bert_finetune_model(model, train_loader, test_loader, device, num_epochs, save_path, lr=2e-5, weights=1):
@@ -1203,13 +1248,13 @@ def train_bert_finetune_model(model, train_loader, test_loader, device, num_epoc
                 y_pred_test.extend(preds)
                 y_true_test.extend(labels.cpu().numpy())
 
-
         test_f1 = f1_score(y_true_test, y_pred_test, average="micro")
         test_acc = accuracy_score(y_true_test, y_pred_test)
         history["test_f1_micro"].append(test_f1)
         history["test_accuracy"].append(test_acc)
 
-        print(f"Epoch {epoch+1}/{num_epochs} - Loss: {total_loss:.4f} | Train Acc: {train_acc:.4f} | Train F1: {train_f1:.4f} | Test Acc: {test_acc:.4f} | Test F1: {test_f1:.4f}")
+        print(
+            f"Epoch {epoch + 1}/{num_epochs} - Loss: {total_loss:.4f} | Train Acc: {train_acc:.4f} | Train F1: {train_f1:.4f} | Test Acc: {test_acc:.4f} | Test F1: {test_f1:.4f}")
 
         # if test_f1 > best_f1:
         #     best_f1 = test_f1
@@ -1222,7 +1267,7 @@ def train_bert_finetune_model(model, train_loader, test_loader, device, num_epoc
 
         best_epoch_f1_micro = np.argmax(history["test_f1_micro"])
         best_f1_micro_test_accuracy = history["test_f1_micro"][best_epoch_f1_micro]
-        best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro]  
+        best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro]
 
     return history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
 
@@ -1264,9 +1309,8 @@ def evaluate_bert_model(model, train_loader, test_loader, device, label="bert_fi
         if isinstance(label_names, (list, np.ndarray)):
             emotion_labels = label_names.tolist() if isinstance(label_names, np.ndarray) else label_names
         else:
-            raise ValueError(f"Expected label_names to be a list or ndarray, but got: {type(label_names).__name__}, label_names: {label_names}")
-
-
+            raise ValueError(
+                f"Expected label_names to be a list or ndarray, but got: {type(label_names).__name__}, label_names: {label_names}")
 
         df = pd.DataFrame({
             "Label": emotion_labels,
@@ -1292,18 +1336,16 @@ def evaluate_bert_model(model, train_loader, test_loader, device, label="bert_fi
     return f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test
 
 
-
-def run_finetuned_bert_model(train_texts, test_texts, train_labels, test_labels, label, num_epochs=200, dropout=0.3, lr=2e-5, label_names=""):
+def run_finetuned_bert_model(train_texts, test_texts, train_labels, test_labels, label, num_epochs=200, dropout=0.3,
+                             lr=2e-5, label_names=""):
     print(f"------------------ Fine-Tuned BERT: {label} ------------------")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = BertForSequenceClassification.from_pretrained(
-    "sdeakin/fine_tuned_bert_emotions",
-    problem_type="multi_label_classification",
-    ignore_mismatched_sizes=True
+        "sdeakin/fine_tuned_bert_emotions",
+        problem_type="multi_label_classification",
+        ignore_mismatched_sizes=True
     )
     tokenizer = BertTokenizer.from_pretrained("sdeakin/fine_tuned_bert_emotions")
-
-
 
     train_loader, test_loader = prepare_bert_dataloaders(train_texts, test_texts, train_labels, test_labels, tokenizer)
 
@@ -1326,22 +1368,22 @@ def run_finetuned_bert_model(train_texts, test_texts, train_labels, test_labels,
     weights = total / (label_counts + 1e-6)
     weights = torch.tensor(weights, dtype=torch.float32)
 
-    history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy = train_bert_finetune_model(model, train_loader, test_loader, device, num_epochs, save_path, lr=lr, weights=weights)
+    history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy = train_bert_finetune_model(
+        model, train_loader, test_loader, device, num_epochs, save_path, lr=lr, weights=weights)
 
     f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test = evaluate_bert_model(
         model, train_loader, test_loader, device, label=label, label_names=label_names
-    )   
-
+    )
 
     return history, f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
 
-import colorcet as cc
 
 ###########################################################################################
 # Controller to run selected models
 ###########################################################################################
 
 import colorsys
+
 
 def generate_distinct_colors(n):
     """Generate `n` visually distinct RGB colors."""
@@ -1394,13 +1436,14 @@ def plot_all_model_histories(history_dict, label_prefix):
     plt.savefig(os.path.join(save_dir, f"all_models_training_plot.png"))
     plt.show()
 
+
 import matplotlib.pyplot as plt
 import os
 import colorcet as cc
 from collections import defaultdict
 
-def plot_model_groups(history_dict, label_prefix):
 
+def plot_model_groups(history_dict, label_prefix):
     os.makedirs(f"plots/grouped/{label_prefix}", exist_ok=True)
 
     # Updated grouping logic
@@ -1456,19 +1499,18 @@ def plot_model_groups(history_dict, label_prefix):
 
 
 def run_selected_models(
-    models_to_run,
-    X_train_tfidf,
-    X_test_tfidf,
-    X_train_bert,
-    X_test_bert,
-    train_texts,
-    test_texts,
-    train_labels,
-    test_labels,
-    label_names,
-    label_prefix=""
+        models_to_run,
+        X_train_tfidf,
+        X_test_tfidf,
+        X_train_bert,
+        X_test_bert,
+        train_texts,
+        test_texts,
+        train_labels,
+        test_labels,
+        label_names,
+        label_prefix=""
 ):
-
     print(f"Running training using the following models: {models_to_run}")
 
     logreg_tfidf_results = []
@@ -1489,7 +1531,7 @@ def run_selected_models(
                       best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy,
                       best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy,
                       results_array=None):
-        
+
         label = f"{label_prefix.upper()} | {label}"
 
         entry = (
@@ -1522,7 +1564,8 @@ def run_selected_models(
 
     if "mlp_bert" in models_to_run:
         for dims, label in [([512, 256], "MLP 2-layer"), ([768, 512, 256], "MLP 3-layer")]:
-            history, *metrics = run_mlp_bert(X_train_bert, X_test_bert, train_labels, test_labels, layer_dims=dims, label=label, num_epochs=num_epochs, label_names=label_names)
+            history, *metrics = run_mlp_bert(X_train_bert, X_test_bert, train_labels, test_labels, layer_dims=dims,
+                                             label=label, num_epochs=num_epochs, label_names=label_names)
             store_results(label, history, *metrics, results_array=mlp_results)
 
     if "cnn_bert" in models_to_run:
@@ -1543,13 +1586,17 @@ def run_selected_models(
             # ([(256, 2), (256, 3), (256, 4)], "cnn_large_weighted_bce_dropout_0.6", 0.6, 1e-4, 'weighted_bce'),
 
             # ([(256, 2), (256, 3), (256, 4)], "cnn_large_weighted_bce_learning_rate_e-5", 0.3, 1e-5, 'weighted_bce'),
-            ([(256, 2), (256, 3), (256, 4)], "cnn_large_weighted_bce_dropout_0.5_learning_rate_e-5", 0.5, 1e-5, 'weighted_bce'),
-            ([(256, 2), (256, 3), (256, 4)], "cnn_large_weighted_bce_dropout_0.4_learning_rate_e-5", 0.4, 1e-5, 'weighted_bce'),
+            ([(256, 2), (256, 3), (256, 4)], "cnn_large_weighted_bce_dropout_0.5_learning_rate_e-5", 0.5, 1e-5,
+             'weighted_bce'),
+            ([(256, 2), (256, 3), (256, 4)], "cnn_large_weighted_bce_dropout_0.4_learning_rate_e-5", 0.4, 1e-5,
+             'weighted_bce'),
             # ([(256, 2), (256, 3), (256, 4)], "cnn_large_weighted_bce_dropout_0.6_learning_rate_e-5", 0.6, 1e-5, 'weighted_bce'),
 
             # ([(256, 2), (256, 3), (256, 4)], "cnn_large_weighted_bce_learning_rate_e-6", 0.3, 1e-6, 'weighted_bce'),
-            ([(256, 2), (256, 3), (256, 4)], "cnn_large_weighted_bce_dropout_0.5_learning_rate_e-6", 0.5, 1e-6, 'weighted_bce'),
-            ([(256, 2), (256, 3), (256, 4)], "cnn_large_weighted_bce_dropout_0.4_learning_rate_e-6", 0.4, 1e-6, 'weighted_bce'),
+            ([(256, 2), (256, 3), (256, 4)], "cnn_large_weighted_bce_dropout_0.5_learning_rate_e-6", 0.5, 1e-6,
+             'weighted_bce'),
+            ([(256, 2), (256, 3), (256, 4)], "cnn_large_weighted_bce_dropout_0.4_learning_rate_e-6", 0.4, 1e-6,
+             'weighted_bce'),
             # ([(256, 2), (256, 3), (256, 4)], "cnn_large_weighted_bce_dropout_0.6_learning_rate_e-6", 0.6, 1e-6, 'weighted_bce'),
 
             # ([(256, 2), (256, 3), (256, 4)], "cnn_large_focal", 0.3, 1e-4, 'focal'),
@@ -1558,8 +1605,8 @@ def run_selected_models(
             # ([(128, 3), (128, 4), (128, 5)], "cnn_medium_weighted_bce_dropout_0.4", 0.4, 1e-4, 'weighted_bce'),
             # ([(128, 3), (128, 4), (128, 5)], "cnn_medium_weighted_bce_dropout_0.6", 0.6, 1e-4, 'weighted_bce'),
             # ([(128, 3), (128, 4), (128, 5)], "cnn_medium_focal", 0.3, 1e-4, 'focal'),
-            ]
-                
+        ]
+
         for config in cnn_configs_list:
             if len(config) == 2:
                 conv_configs, label = config
@@ -1577,7 +1624,7 @@ def run_selected_models(
                 conv_configs, label, dropout, lr, loss_type = config
             else:
                 raise ValueError("cnn_configs_list format is incorrect")
-            
+
             history, *metrics = run_cnn_bert(
                 X_train_bert, X_test_bert, train_labels, test_labels,
                 conv_configs, label, num_epochs,
@@ -1598,7 +1645,8 @@ def run_selected_models(
         for hidden_dim, num_layers, dropout, lr, label in lstm_configs_list:
             print(f"\nRunning BiLSTM: {label}")
             history, *metrics = run_lstm_bert(X_train_bert, X_test_bert, train_labels, test_labels,
-                                              hidden_dim, num_layers, dropout, lr, label, num_epochs, label_names=label_names)
+                                              hidden_dim, num_layers, dropout, lr, label, num_epochs,
+                                              label_names=label_names)
             store_results(f"BiLSTM {label}", history, *metrics, results_array=lstm_results)
 
     if "bert_finetune" in models_to_run:
@@ -1608,8 +1656,8 @@ def run_selected_models(
             (1e-6, 0.3, "finetune_lr_1e6"),
             (1e-6, 0.4, "finetune_dropout_0.4"),
             # (1e-6, 0.5, "finetune_dropout_0.5"),
-        ]   
-         
+        ]
+
         for lr, dropout, label in bert_configs_list:
             history, *metrics = run_finetuned_bert_model(train_texts, test_texts, train_labels, test_labels,
                                                          label, num_epochs, dropout, lr, label_names=label_names)
@@ -1617,21 +1665,20 @@ def run_selected_models(
 
     print("\n================ FINAL CONSOLIDATED MODEL COMPARISON (FULL) ====================\n")
     print(f"{'Model':<35} | {'Train Micro':>11} | {'Train Macro':>11} | {'Test Micro':>10} | {'Test Macro':>10} | "
-        f"{'Best Ep (Acc)':>13} | {'Best F1 (Acc)':>13} | {'Best Acc (Acc)':>14} | "
-        f"{'Best Ep (F1)':>13} | {'Best F1 (F1)':>13} | {'Best Acc (F1)':>14}")
+          f"{'Best Ep (Acc)':>13} | {'Best F1 (Acc)':>13} | {'Best Acc (Acc)':>14} | "
+          f"{'Best Ep (F1)':>13} | {'Best F1 (F1)':>13} | {'Best Acc (F1)':>14}")
     print("-" * 150)
 
     for entry in final_results:
         label, f1_train_micro, f1_train_macro, f1_test_micro, f1_test_macro, \
-        best_epoch_acc, best_f1_acc, best_acc_acc, \
-        best_epoch_f1, best_f1_f1, best_acc_f1 = entry
+            best_epoch_acc, best_f1_acc, best_acc_acc, \
+            best_epoch_f1, best_f1_f1, best_acc_f1 = entry
 
         print(f"{label:<35} | "
-            f"{f1_train_micro:11.4f} | {f1_train_macro:11.4f} | {f1_test_micro:10.4f} | {f1_test_macro:10.4f} | "
-            f"{best_epoch_acc:13} | {best_f1_acc:13.4f} | {best_acc_acc:14.4f} | "
-            f"{best_epoch_f1:13} | {best_f1_f1:13.4f} | {best_acc_f1:14.4f}")
+              f"{f1_train_micro:11.4f} | {f1_train_macro:11.4f} | {f1_test_micro:10.4f} | {f1_test_macro:10.4f} | "
+              f"{best_epoch_acc:13} | {best_f1_acc:13.4f} | {best_acc_acc:14.4f} | "
+              f"{best_epoch_f1:13} | {best_f1_f1:13.4f} | {best_acc_f1:14.4f}")
 
-    
     # Save consolidated results to CSV
     import pandas as pd
     os.makedirs("results", exist_ok=True)
@@ -1647,9 +1694,6 @@ def run_selected_models(
 
     plot_all_model_histories(history_dict, label_prefix)
     plot_model_groups(history_dict, label_prefix)
-
-    
-    
 
 ###########################################################################################
 # Run Models
@@ -1676,4 +1720,3 @@ def run_selected_models(
 #     test_labels=test_labels,
 #     label_names= emotion_columns,
 #     label_prefix="emotions")
-

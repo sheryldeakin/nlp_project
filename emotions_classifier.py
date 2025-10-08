@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 
 # Load dataset
@@ -25,7 +24,6 @@ df.head()
 # For initial testing, smaller sample
 df_sample = df.sample(n=50000, random_state=42)  # Take 10,000 random samples
 
-
 from sklearn.model_selection import train_test_split
 
 #  # Use smaller dataset for training
@@ -41,13 +39,11 @@ from sklearn.model_selection import train_test_split
 ###########################################################################################
 # Pre-Cleaning
 ###########################################################################################
-import preprocessor
 import contractions
 import re
 from nltk.corpus import stopwords
 import nltk
 from nltk.stem import WordNetLemmatizer
-from nltk.corpus import wordnet
 
 nltk.download('wordnet')
 lemmatizer = WordNetLemmatizer()
@@ -57,30 +53,31 @@ stop_words = set(stopwords.words("english"))
 
 slang_dict = {"brb": "be right back", "idk": "I don't know", "u": "you"}
 
+
 def clean_text(text):
-  re_number = re.compile('[0-9]+')
-  re_url = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
-  re_tag = re.compile('\[[A-Z]+\]')
-  re_char = re.compile('[^0-9a-zA-Z\s?!.,:\'\"//]+')
-  re_char_clean = re.compile('[^0-9a-zA-Z\s?!.,\[\]]')
-  re_punc = re.compile('[?!,.\'\"]')
-  
-  text = re.sub(re_char, "", text) # Remove unknown character 
-  text = contractions.fix(text) # Expand contraction
-  text = re.sub(re_url, ' [url] ', text) # Replace URL with number
-  text = re.sub(re_char_clean, "", text) # Only alphanumeric and punctuations.
-  #text = re.sub(re_punc, "", text) # Remove punctuation.
-  text = text.lower() # Lower text
-  text = " ".join([w for w in text.split(' ') if w != " "]) # Remove whitespace
+    re_number = re.compile('[0-9]+')
+    re_url = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
+    re_tag = re.compile('\[[A-Z]+\]')
+    re_char = re.compile('[^0-9a-zA-Z\s?!.,:\'\"//]+')
+    re_char_clean = re.compile('[^0-9a-zA-Z\s?!.,\[\]]')
+    re_punc = re.compile('[?!,.\'\"]')
 
-#   text = " ".join([lemmatizer.lemmatize(word) for word in text.split()])
-  text = " ".join([slang_dict[word] if word in slang_dict else word for word in text.split()])
+    text = re.sub(re_char, "", text)  # Remove unknown character
+    text = contractions.fix(text)  # Expand contraction
+    text = re.sub(re_url, ' [url] ', text)  # Replace URL with number
+    text = re.sub(re_char_clean, "", text)  # Only alphanumeric and punctuations.
+    # text = re.sub(re_punc, "", text) # Remove punctuation.
+    text = text.lower()  # Lower text
+    text = " ".join([w for w in text.split(' ') if w != " "])  # Remove whitespace
 
+    #   text = " ".join([lemmatizer.lemmatize(word) for word in text.split()])
+    text = " ".join([slang_dict[word] if word in slang_dict else word for word in text.split()])
 
-  #Makes BERT worse, but without BERT better
-#   text = " ".join([word for word in text.split() if word not in stop_words]) # Remove stopwords
+    # Makes BERT worse, but without BERT better
+    #   text = " ".join([word for word in text.split() if word not in stop_words]) # Remove stopwords
 
-  return text
+    return text
+
 
 # Apply text cleaning to dataset
 df_sample["cleaned_text"] = df_sample["text"].apply(clean_text)
@@ -148,25 +145,21 @@ for kernel in kernels:
 ###########################################################################################
 # Using BERT to expand text instead of TF-IDF
 ###########################################################################################
-import torch
-from transformers import BertTokenizer, BertModel
-from tqdm import tqdm
 import numpy as np
 
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer
 
-from huggingface_hub import login
-
-# Load pre-trained BERT tokenizer & model - Baseline BERT model 
+# Load pre-trained BERT tokenizer & model - Baseline BERT model
 # tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 # bert_model = BertModel.from_pråetrained("bert-base-uncased")
 
 from huggingface_hub import snapshot_download
 
-model_path = snapshot_download(repo_id="sdeakin/bert_fine_tuned_emotions") 
+model_path = snapshot_download(repo_id="sdeakin/bert_fine_tuned_emotions")
 
 num_labels = df["label"].nunique()
-from transformers import BertForSequenceClassification, BertTokenizer
+from transformers import BertForSequenceClassification
+
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 bert_model = BertForSequenceClassification.from_pretrained(model_path, num_labels=num_labels)
 
@@ -214,20 +207,18 @@ bert_model = BertForSequenceClassification.from_pretrained(model_path, num_label
 #     return np.vstack(embeddings)  # Combine all batches
 
 
-
-import torch
-
 # For custom bert model
 
 print(f"Train texts: {len(train_texts)}")
 print(f"Train labels: {len(train_labels)}")
 
+
 def get_bert_embeddings(text_list, batch_size=128):
     """Tokenize text and extract BERT embeddings ensuring all samples are processed."""
     embeddings = []
-    
+
     total_batches = len(text_list) // batch_size + int(len(text_list) % batch_size != 0)
-    
+
     print(f"🔹 Total texts to process: {len(text_list)}")  # ✅ Debugging
     print(f"🔹 Total batches expected: {total_batches}")
 
@@ -236,7 +227,7 @@ def get_bert_embeddings(text_list, batch_size=128):
             if i + batch_size > len(text_list):  # Ensure last batch is fully processed
                 batch_texts = text_list[i:]
             else:
-                batch_texts = text_list[i : i + batch_size]
+                batch_texts = text_list[i: i + batch_size]
 
             # Tokenize batch
             tokens = tokenizer(batch_texts, padding=True, truncation=True, return_tensors="pt", max_length=512)
@@ -255,9 +246,8 @@ def get_bert_embeddings(text_list, batch_size=128):
 
     # **Check final shape**
     print(f" Expected embeddings: {len(text_list)}, Extracted embeddings: {embeddings.shape[0]}")
-    
-    return embeddings
 
+    return embeddings
 
 
 # Convert training and test texts into BERT embeddings
@@ -298,6 +288,7 @@ clf_bert = SGDClassifier(loss="log_loss", max_iter=1000, tol=1e-3)
 
 # Convert labels to numerical (if needed)
 from sklearn.preprocessing import LabelEncoder
+
 label_encoder = LabelEncoder()
 train_labels_encoded = label_encoder.fit_transform(train_labels)
 test_labels_encoded = label_encoder.transform(test_labels)
@@ -309,10 +300,10 @@ batch_size = 256  # Define batch size
 print("\nTraining Logistic Regression with BERT Embeddings...\n")
 
 for epoch in range(num_epochs):
-    print(f"Epoch {epoch+1}/{num_epochs}:")
-    for i in tqdm(range(0, X_train_bert.shape[0], batch_size), desc=f"Training Progress (Epoch {epoch+1})"):
-        batch_X = X_train_bert[i : i + batch_size]
-        batch_y = train_labels_encoded[i : i + batch_size]
+    print(f"Epoch {epoch + 1}/{num_epochs}:")
+    for i in tqdm(range(0, X_train_bert.shape[0], batch_size), desc=f"Training Progress (Epoch {epoch + 1})"):
+        batch_X = X_train_bert[i: i + batch_size]
+        batch_y = train_labels_encoded[i: i + batch_size]
 
         # Perform batch-wise fitting
         clf_bert.partial_fit(batch_X, batch_y, classes=np.unique(train_labels_encoded))
@@ -331,10 +322,10 @@ from sklearn.linear_model import SGDClassifier
 from sklearn.kernel_approximation import RBFSampler, PolynomialCountSketch
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
-from sklearn.utils import shuffle
 
 # Ensure tqdm works inside pandas apply() calls
 tqdm.pandas()
+
 
 # Function to display progress during feature transformation
 def transform_with_progress(transformer, X, description="Transforming"):
@@ -343,6 +334,7 @@ def transform_with_progress(transformer, X, description="Transforming"):
         X_transformed = transformer.fit_transform(X)
         pbar.update(X.shape[0])  # Mark all samples as processed
     return X_transformed
+
 
 # Define different loss functions for SGDClassifier
 loss_functions = {
@@ -370,8 +362,10 @@ for name, model in loss_functions.items():
 
     # Apply feature transformation with progress bar if needed
     if isinstance(model, Pipeline):
-        X_train_transformed = transform_with_progress(model.named_steps[list(model.named_steps.keys())[0]], X_train_bert, description=f"Transforming Train Data ({name})")
-        X_test_transformed = transform_with_progress(model.named_steps[list(model.named_steps.keys())[0]], X_test_bert, description=f"Transforming Test Data ({name})")
+        X_train_transformed = transform_with_progress(model.named_steps[list(model.named_steps.keys())[0]],
+                                                      X_train_bert, description=f"Transforming Train Data ({name})")
+        X_test_transformed = transform_with_progress(model.named_steps[list(model.named_steps.keys())[0]], X_test_bert,
+                                                     description=f"Transforming Test Data ({name})")
         model.named_steps["sgd"].fit(X_train_transformed, train_labels_encoded)
     else:
         model.fit(X_train_bert, train_labels_encoded)
@@ -440,7 +434,6 @@ for kernel in kernels:
     accuracy_svm = accuracy_score(test_labels, y_pred_svm)
     print(f"SVM + BERT ({kernel}) Accuracy: {accuracy_svm:.2f}")
 
-
 ###########################################################################################
 # MLP + BERT
 ###########################################################################################
@@ -470,6 +463,7 @@ test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
+
 # Define MLP Classifier
 class MLPClassifier(nn.Module):
     def __init__(self, input_dim, num_classes):
@@ -478,12 +472,13 @@ class MLPClassifier(nn.Module):
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(0.3)  # Helps prevent overfitting
         self.fc2 = nn.Linear(256, num_classes)
-    
+
     def forward(self, x):
         x = self.relu(self.fc1(x))
         x = self.dropout(x)
         x = self.fc2(x)
         return x
+
 
 # Initialize model, optimizer, and loss function
 num_classes = len(label_encoder.classes_)  # Get number of classes dynamically
@@ -517,7 +512,7 @@ for epoch in range(num_epochs):
         total += y_batch.size(0)
 
     train_acc = correct / total
-    print(f"Epoch [{epoch+1}/{num_epochs}] - Loss: {total_loss:.4f}, Train Accuracy: {train_acc:.4f}")
+    print(f"Epoch [{epoch + 1}/{num_epochs}] - Loss: {total_loss:.4f}, Train Accuracy: {train_acc:.4f}")
 
 # Evaluate Model on Test Set
 model.eval()
