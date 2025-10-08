@@ -149,3 +149,81 @@ def predict_emotion(text, model, tokenizer, emotion_labels):
 emotion_labels = list(emotion_columns)
 print(predict_emotion("I feel so sad and lonely today.", model, tokenizer, emotion_labels))
 print(predict_emotion("I just got a new job! I'm so happy.", model, tokenizer, emotion_labels))
+
+
+
+#############
+
+from transformers import BertForSequenceClassification
+
+# tokenizer = AutoTokenizer.from_pretrained("fine_tuned_bert_emotions")
+tokenizer = AutoTokenizer.from_pretrained("sdeakin/fine_tuned_bert_emotions")
+
+# bert_model = BertForSequenceClassification.from_pretrained("fine_tuned_bert_emotions", num_labels=num_labels)
+
+# Load BERT model with sigmoid activation for multi-label classification
+bert_model = BertForSequenceClassification.from_pretrained(
+    "sdeakin/fine_tuned_bert_emotions",
+    num_labels=num_labels,
+    problem_type="multi_label_classification",
+    ignore_mismatched_sizes=True
+)
+
+from transformers import BertTokenizer
+
+
+# tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+
+def encode_texts(texts, tokenizer, max_length=512):
+    return tokenizer(
+        texts,
+        padding=True,
+        truncation=True,
+        return_tensors="pt",
+        max_length=max_length
+    )
+
+
+def get_bert_embeddings(text_list, batch_size=128):
+    """Tokenize text and extract BERT embeddings ensuring all samples are processed."""
+    embeddings = []
+
+    total_batches = len(text_list) // batch_size + int(len(text_list) % batch_size != 0)
+
+    print(f" Total texts to process: {len(text_list)}")
+    print(f" Total batches expected: {total_batches}")
+
+    with torch.no_grad():
+        for i in tqdm(range(0, len(text_list), batch_size), desc="Processing BERT Embeddings"):
+            if i + batch_size > len(text_list):  # Ensure last batch is fully processed
+                batch_texts = text_list[i:]
+            else:
+                batch_texts = text_list[i: i + batch_size]
+
+            # Tokenize batch
+            # tokens = tokenizer(batch_texts, padding=True, truncation=True, return_tensors="pt", max_length=512)
+            tokens = tokenizer(batch_texts, padding="max_length", truncation=True, return_tensors="pt", max_length=64)
+
+            # Move tokens to GPU if available
+            # tokens = {key: value.to(device) for key, value in tokens.items()}
+
+            # Extract embeddings from BERT (use .bert to avoid classification head)
+            outputs = bert_model.bert(**tokens)
+
+            # Mean pooling: Average all token embeddings
+            # batch_embeddings = outputs.last_hidden_state.mean(dim=1).cpu().numpy()
+            batch_embeddings = outputs.last_hidden_state.cpu().numpy()  # shape: [batch, seq_len, 768]
+            embeddings.append(batch_embeddings)
+
+    embeddings = np.vstack(embeddings)  # Stack all batches
+
+    # **Check final shape**
+    print(f" Expected embeddings: {len(text_list)}, Extracted embeddings: {embeddings.shape[0]}")
+
+    return embeddings
+
+
+# Convert training and test texts into BERT embeddings
+print(f"\nConverting training and test sets into BERT embeddings...")
+X_train_bert = get_bert_embeddings(train_texts, batch_size=32)
+X_test_bert = get_bert_embeddings(test_texts, batch_size=32)
