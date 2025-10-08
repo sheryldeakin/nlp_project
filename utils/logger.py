@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from nlp_project.utils.constants import Constants
+from utils.constants import Constants
 
 
 class Logger:
