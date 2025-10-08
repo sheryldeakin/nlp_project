@@ -37,6 +37,25 @@ class HelperMethods:
 
         return emotion_column
 
+    def store_results(self, label, history, f1_train_micro, f1_train_macro, f1_test_micro, f1_test_macro,
+                      best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy,
+                      best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy,
+                      results_array=None):
+
+        label_prefix = "emotions"
+
+        label = f"{label_prefix.upper()} | {label}"
+
+        entry = (
+            label, f1_train_micro, f1_train_macro, f1_test_micro, f1_test_macro,
+            best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy,
+            best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
+        )
+        if results_array is not None:
+            results_array.append(entry)
+        final_results.append(entry)
+        history_dict[label] = history
+
     def get_bert_embeddings(self, text_list, batch_size=128):
         embeddings = []
 
