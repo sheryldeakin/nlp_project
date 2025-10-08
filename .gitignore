@@ -3,4 +3,4 @@ bert_emotions_results/
 *.ipynb_checkpoints
 __pycache__/
 
-.venv/*
+.venv/
