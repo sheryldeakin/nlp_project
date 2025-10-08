@@ -1,22 +1,21 @@
+import warnings
+
 import pandas as pd
 import torch
 from datasets import Dataset
-from sklearn.model_selection import train_test_split
-from transformers import BertTokenizer, BertForSequenceClassification, Trainer, TrainingArguments
-from torch.nn import BCEWithLogitsLoss
-from sklearn.metrics import f1_score, precision_score, recall_score
-import warnings
 from sklearn.exceptions import UndefinedMetricWarning
+from sklearn.metrics import f1_score, precision_score, recall_score
+from sklearn.model_selection import train_test_split
+from torch.nn import BCEWithLogitsLoss
+from transformers import BertTokenizer, BertForSequenceClassification, Trainer, TrainingArguments
 
-import torch
-print(torch.cuda.is_available())                     # Should return: True
-print(torch.cuda.get_device_name(0))                 # Should print: "NVIDIA GeForce RTX 5090" (or similar)
-print(torch.cuda.current_device())                   # Should return: 0
-print(torch.cuda.device_count())                     # Should return: 1 (or more if multi-GPU)
-
+print(torch.cuda.is_available())  # Should return: True
+print(torch.cuda.get_device_name(0))  # Should print: "NVIDIA GeForce RTX 5090" (or similar)
+print(torch.cuda.current_device())  # Should return: 0
+print(torch.cuda.device_count())  # Should return: 1 (or more if multi-GPU)
 
 # Load dataset
-df = pd.read_csv("data/go_emotions_dataset.csv")  
+df = pd.read_csv("resources/csv_files/go_emotions_dataset.csv")
 
 # Remove unnecessary columns
 df = df.drop(columns=["id", "example_very_unclear"])
@@ -45,9 +44,11 @@ test_dataset = Dataset.from_dict({"text": test_texts, "labels": test_labels})
 # Load pre-trained tokenizer
 tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 
+
 # Tokenization function
 def tokenize_function(examples):
     return tokenizer(examples["text"], padding="max_length", truncation=True, max_length=128)
+
 
 # Apply tokenization
 train_dataset = train_dataset.map(tokenize_function, batched=True)
@@ -61,6 +62,7 @@ test_dataset = test_dataset.remove_columns(["text"])
 train_dataset.set_format("torch")
 test_dataset.set_format("torch")
 
+
 # Define custom model with correct loss function
 class MultiLabelBert(BertForSequenceClassification):
     def compute_loss(self, model, inputs, return_outputs=False):
@@ -70,6 +72,7 @@ class MultiLabelBert(BertForSequenceClassification):
         loss_fn = BCEWithLogitsLoss()
         loss = loss_fn(logits, labels)
         return (loss, outputs) if return_outputs else loss
+
 
 # Initialize model
 num_labels = len(emotion_columns)
@@ -96,6 +99,7 @@ training_args = TrainingArguments(
     fp16=True
 )
 
+
 # Compute Metrics
 def compute_metrics(eval_pred):
     logits, labels = eval_pred
@@ -109,6 +113,7 @@ def compute_metrics(eval_pred):
         recall = recall_score(labels, predictions, average='micro', zero_division=0)
 
     return {"f1_micro": f1_micro, "precision": precision, "recall": recall}
+
 
 # Trainer
 trainer = Trainer(
@@ -126,17 +131,19 @@ trainer.train()
 trainer.save_model("./fine_tuned_bert_emotions")
 tokenizer.save_pretrained("./fine_tuned_bert_emotions")
 
+
 # Prediction Function
 def predict_emotion(text, model, tokenizer, emotion_labels):
     tokens = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=128).to(device)
-    
+
     with torch.no_grad():
         outputs = model(**tokens)
 
     probs = torch.sigmoid(outputs.logits.detach()).cpu().numpy()
     predictions = (probs >= 0.5).astype(int)
-    
+
     return [emotion_labels[i] for i, val in enumerate(predictions[0]) if val == 1]
+
 
 # Test
 emotion_labels = list(emotion_columns)

@@ -1,10 +1,8 @@
-import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
 # Load Dataset
 df = pd.read_csv("labeled_triggers_exploded.csv")
-
 
 # Drop rows where no trigger was found
 df = df[df["trigger_label"] != "No Trigger Found"]
@@ -20,13 +18,11 @@ print(df.head())
 ###########################################################################################
 # Pre-Cleaning
 ###########################################################################################
-import preprocessor
 import contractions
 import re
 from nltk.corpus import stopwords
 import nltk
 from nltk.stem import WordNetLemmatizer
-from nltk.corpus import wordnet
 
 nltk.download('wordnet')
 lemmatizer = WordNetLemmatizer()
@@ -36,30 +32,31 @@ stop_words = set(stopwords.words("english"))
 
 slang_dict = {"brb": "be right back", "idk": "I don't know", "u": "you"}
 
+
 def clean_text(text):
-  re_number = re.compile('[0-9]+')
-  re_url = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
-  re_tag = re.compile('\[[A-Z]+\]')
-  re_char = re.compile('[^0-9a-zA-Z\s?!.,:\'\"//]+')
-  re_char_clean = re.compile('[^0-9a-zA-Z\s?!.,\[\]]')
-  re_punc = re.compile('[?!,.\'\"]')
-  
-  text = re.sub(re_char, "", text) # Remove unknown character 
-  text = contractions.fix(text) # Expand contraction
-  text = re.sub(re_url, ' [url] ', text) # Replace URL with number
-  text = re.sub(re_char_clean, "", text) # Only alphanumeric and punctuations.
-  #text = re.sub(re_punc, "", text) # Remove punctuation.
-  text = text.lower() # Lower text
-  text = " ".join([w for w in text.split(' ') if w != " "]) # Remove whitespace
+    re_number = re.compile('[0-9]+')
+    re_url = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
+    re_tag = re.compile('\[[A-Z]+\]')
+    re_char = re.compile('[^0-9a-zA-Z\s?!.,:\'\"//]+')
+    re_char_clean = re.compile('[^0-9a-zA-Z\s?!.,\[\]]')
+    re_punc = re.compile('[?!,.\'\"]')
 
-  text = " ".join([lemmatizer.lemmatize(word) for word in text.split()])
-  text = " ".join([slang_dict[word] if word in slang_dict else word for word in text.split()])
+    text = re.sub(re_char, "", text)  # Remove unknown character
+    text = contractions.fix(text)  # Expand contraction
+    text = re.sub(re_url, ' [url] ', text)  # Replace URL with number
+    text = re.sub(re_char_clean, "", text)  # Only alphanumeric and punctuations.
+    # text = re.sub(re_punc, "", text) # Remove punctuation.
+    text = text.lower()  # Lower text
+    text = " ".join([w for w in text.split(' ') if w != " "])  # Remove whitespace
 
+    text = " ".join([lemmatizer.lemmatize(word) for word in text.split()])
+    text = " ".join([slang_dict[word] if word in slang_dict else word for word in text.split()])
 
-  #Makes BERT worse, but without BERT better
-#   text = " ".join([word for word in text.split() if word not in stop_words]) # Remove stopwords
+    # Makes BERT worse, but without BERT better
+    #   text = " ".join([word for word in text.split() if word not in stop_words]) # Remove stopwords
 
-  return text
+    return text
+
 
 # Apply text cleaning to dataset
 df["cleaned_text"] = df["text"].apply(clean_text)
@@ -131,16 +128,12 @@ for kernel in kernels:
 ###########################################################################################
 import torch
 from transformers import BertTokenizer, BertModel
-from tqdm import tqdm
 import numpy as np
-
-from transformers import AutoTokenizer, AutoModel
-
-from huggingface_hub import login
 
 # Load pre-trained BERT tokenizer & model
 tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 bert_model = BertModel.from_pretrained("bert-base-uncased")
+
 
 # Function to tokenize text and extract embeddings with a more detailed progress bar
 def get_bert_embeddings(text_list, batch_size=32):
@@ -150,7 +143,7 @@ def get_bert_embeddings(text_list, batch_size=32):
 
     with tqdm(total=len(text_list), desc="Processing BERT Embeddings", unit="sentence") as pbar:
         for i in range(0, len(text_list), batch_size):
-            batch_texts = text_list[i : i + batch_size]
+            batch_texts = text_list[i: i + batch_size]
 
             # Tokenize batch
             tokens = tokenizer(batch_texts, padding=True, truncation=True, return_tensors="pt", max_length=512)
@@ -165,9 +158,10 @@ def get_bert_embeddings(text_list, batch_size=32):
             embeddings.append(batch_embeddings)
 
             # Update progress bar by number of processed sentences
-            pbar.update(len(batch_texts))  
+            pbar.update(len(batch_texts))
 
     return np.vstack(embeddings)  # Combine all batches
+
 
 # Convert training and test texts into BERT embeddings
 print(f"\nConverting training and test sets into BERT embeddings...")
@@ -211,6 +205,7 @@ clf_bert = SGDClassifier(loss="log_loss", max_iter=1000, tol=1e-3)
 
 # Convert labels to numerical (if needed)
 from sklearn.preprocessing import LabelEncoder
+
 label_encoder = LabelEncoder()
 train_labels_encoded = label_encoder.fit_transform(train_labels)
 test_labels_encoded = label_encoder.transform(test_labels)
@@ -222,10 +217,10 @@ batch_size = 256  # Define batch size
 print("\nTraining Logistic Regression with BERT Embeddings...\n")
 
 for epoch in range(num_epochs):
-    print(f"Epoch {epoch+1}/{num_epochs}:")
-    for i in tqdm(range(0, X_train_bert.shape[0], batch_size), desc=f"Training Progress (Epoch {epoch+1})"):
-        batch_X = X_train_bert[i : i + batch_size]
-        batch_y = train_labels_encoded[i : i + batch_size]
+    print(f"Epoch {epoch + 1}/{num_epochs}:")
+    for i in tqdm(range(0, X_train_bert.shape[0], batch_size), desc=f"Training Progress (Epoch {epoch + 1})"):
+        batch_X = X_train_bert[i: i + batch_size]
+        batch_y = train_labels_encoded[i: i + batch_size]
 
         # Perform batch-wise fitting
         clf_bert.partial_fit(batch_X, batch_y, classes=np.unique(train_labels_encoded))
@@ -353,12 +348,12 @@ for kernel in kernels:
     accuracy_svm = accuracy_score(test_labels, y_pred_svm)
     print(f"SVM + BERT ({kernel}) Accuracy: {accuracy_svm:.2f}")
 
-
 ###########################################################################################
 # Checking with Synonyms
 ###########################################################################################
 import random
 from nltk.corpus import wordnet
+
 
 def get_synonyms(word):
     """Fetch synonyms from WordNet"""
@@ -367,6 +362,7 @@ def get_synonyms(word):
         for lemma in syn.lemmas():
             synonyms.add(lemma.name().replace("_", " "))  # Convert underscores to spaces
     return list(synonyms) if synonyms else []  # Return empty list if no synonyms found
+
 
 def replace_with_synonyms(text):
     """Replace words in text with synonyms from dictionary"""
@@ -381,6 +377,7 @@ def replace_with_synonyms(text):
             new_words.append(word)
 
     return " ".join(new_words)
+
 
 # Apply to dataset
 df["synonym_text"] = df["cleaned_text"].apply(replace_with_synonyms)

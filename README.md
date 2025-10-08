@@ -1,8 +1,12 @@
 # Reading Between the Lines: Multi-Label Classification of Mental Health Signals Using Weak Supervision and BERT Embeddings
-# 
-This project implements a full **multi-label classification pipeline** for detecting mental health **triggers**, **themes**, and **symptoms** from text data.
+
+#  
+
+This project implements a full **multi-label classification pipeline** for detecting mental health **triggers**, *
+*themes**, and **symptoms** from text data.
 
 It supports training and evaluating a variety of models, including:
+
 - TF-IDF + Logistic Regression
 - TF-IDF + SVM (multiple kernels)
 - BERT embeddings + Logistic Regression / SVM
@@ -18,7 +22,8 @@ The project compares all models using accuracy, F1 scores, and plots training pe
 ## Project Structure
 
 - `classification_pipeline.py`: Main script to run the full training and evaluation across all models and datasets.
-- `emotions_multi_class_classifier.py`: Contains model architectures, training, and evaluation logic. Uncomment bottom to run for emotions (this realistically should be added to the pipeline but i ran out of time)
+- `emotions_multi_class_classifier.py`: Contains model architectures, training, and evaluation logic. Uncomment bottom
+  to run for emotions (this realistically should be added to the pipeline but i ran out of time)
 - `labeled_outputs/`: Folder expected to contain the labeled trigger, theme, and symptom datasets (explained below).
 - `plots/` and `results/`: Output folders for saving model training graphs and final evaluation results.
 
@@ -26,11 +31,13 @@ The project compares all models using accuracy, F1 scores, and plots training pe
 
 ## Important Note: Generating Labeled Outputs
 
-The `labeled_outputs/` CSV files (e.g., `labeled_triggers_keywords.csv`, `labeled_themes_keywords.csv`, etc.) are **not included** by default due to size and github restrictions.
+The `labeled_outputs/` CSV files (e.g., `labeled_triggers_keywords.csv`, `labeled_themes_keywords.csv`, etc.) are **not
+included** by default due to size and github restrictions.
 
 You must **generate these files** before running `classification_pipeline.py`.
 
 These labeled outputs are created by running your own labeling script or model that assigns:
+
 - Keyword-based trigger labels
 - Sentiment-based trigger labels
 - Keyword-based theme labels
@@ -54,13 +61,15 @@ Each generated CSV should contain:
     ```
 
 2. **Generate the `labeled_outputs/` files**  
-   You need to run your labeling model/script separately to create the required CSV files under a folder named `labeled_outputs/`.
+   You need to run your labeling model/script separately to create the required CSV files under a folder named
+   `labeled_outputs/`.
 
 3. **Fine-tuned BERT Model**
-   - The code expects a fine-tuned BERT model named `"fine_tuned_bert_emotions"`.
-   - Either:
-     - Fine-tune BERT yourself using an emotions dataset (such as GoEmotions) using the emotions_bert_fine_tuned.py file,
-     - Or use the uploaded hugging face model (default implemented) 'sdeakin/fine_tuned_bert_emotions'
+    - The code expects a fine-tuned BERT model named `"fine_tuned_bert_emotions"`.
+    - Either:
+        - Fine-tune BERT yourself using an emotions dataset (such as GoEmotions) using the emotions_bert_fine_tuned.py
+          file,
+        - Or use the uploaded hugging face model (default implemented) 'sdeakin/fine_tuned_bert_emotions'
 
 4. **Run the Classification Pipeline**
     ```bash
@@ -68,10 +77,10 @@ Each generated CSV should contain:
     ```
 
    This will:
-   - Load the labeled data
-   - Generate BERT and TF-IDF features
-   - Train and evaluate all selected models
-   - Save model comparisons and plots
+    - Load the labeled data
+    - Generate BERT and TF-IDF features
+    - Train and evaluate all selected models
+    - Save model comparisons and plots
 
 ---
 
@@ -79,15 +88,15 @@ Each generated CSV should contain:
 
 The pipeline is designed to run across six datasets + emotions:
 
-| Dataset | Description |
-|:--------|:------------|
-| `labeled_triggers_keywords.csv` | Trigger labels based on keyword matching |
-| `labeled_triggers_sentiment.csv` | Trigger labels based on sentiment analysis |
-| `labeled_themes_keywords.csv` | Theme labels based on keyword matching |
-| `labeled_themes_sentiment.csv` | Theme labels based on sentiment analysis |
-| `labeled_symptoms_keywords.csv` | Symptom labels based on keyword matching |
-| `labeled_symptoms_sentiment.csv` | Symptom labels based on sentiment analysis |
-| `go_emotions_dataset.csv` | Taken from kaggle, Google's goEmotions database |
+| Dataset                          | Description                                     |
+|:---------------------------------|:------------------------------------------------|
+| `labeled_triggers_keywords.csv`  | Trigger labels based on keyword matching        |
+| `labeled_triggers_sentiment.csv` | Trigger labels based on sentiment analysis      |
+| `labeled_themes_keywords.csv`    | Theme labels based on keyword matching          |
+| `labeled_themes_sentiment.csv`   | Theme labels based on sentiment analysis        |
+| `labeled_symptoms_keywords.csv`  | Symptom labels based on keyword matching        |
+| `labeled_symptoms_sentiment.csv` | Symptom labels based on sentiment analysis      |
+| `go_emotions_dataset.csv`        | Taken from kaggle, Google's goEmotions database |
 
 You can comment out datasets you are not using by modifying `datasets = [...]` in `classification_pipeline.py`.
 
@@ -107,6 +116,7 @@ After training, the following outputs will be generated:
 ## Acknowledgments
 
 This project uses the following libraries and models:
+
 - HuggingFace Transformers
 - Scikit-learn
 - PyTorch

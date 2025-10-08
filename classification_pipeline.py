@@ -1,26 +1,27 @@
 import time
-from sklearn.preprocessing import MultiLabelBinarizer
-from sklearn.model_selection import train_test_split
+
 import numpy as np
 import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MultiLabelBinarizer
 from tqdm import tqdm
 
 from emotions_multi_class_classifier import run_selected_models, get_bert_embeddings
-from sklearn.feature_extraction.text import TfidfVectorizer
 
 
 def load_and_prepare_dataset(path, label_col, prefix):
     df = pd.read_csv(path)
     df["text"] = df["text"].astype(str)
-    
+
     # Normalize and prefix label
     df[label_col] = df[label_col].fillna("").astype(str)
     df = df[df[label_col] != ""]
     df[label_col] = df[label_col].apply(lambda x: [f"{prefix}_{x.strip()}"] if isinstance(x, str) else [])
-    
+
     # Explode and regroup to get multilabels
     df = df.groupby("text")[label_col].sum().reset_index()
-    
+
     # Binarize
     mlb = MultiLabelBinarizer()
     labels = mlb.fit_transform(df[label_col])
@@ -30,8 +31,10 @@ def load_and_prepare_dataset(path, label_col, prefix):
 
     return df["text"].tolist(), labels, label_names
 
+
 def prepare_bert_embeddings(texts, batch_size=32):
     return get_bert_embeddings(texts, batch_size=batch_size)
+
 
 def process_and_run_all_models():
     print(f"RUNNING THE PIPELINE")
@@ -53,7 +56,7 @@ def process_and_run_all_models():
 
     for path, label_col, prefix in progress:
         start_time = time.time()
-        
+
         texts, labels, label_names = load_and_prepare_dataset(path, label_col, prefix)
 
         # Split
@@ -94,19 +97,20 @@ def process_and_run_all_models():
 
         print(f"Running models for {prefix.upper()}")
         run_selected_models(models_to_run, X_train_tfidf=X_train_tfidf,
-            X_test_tfidf=X_test_tfidf,
-            X_train_bert=X_train_bert,
-            X_test_bert=X_test_bert,
-            train_texts=train_texts,
-            test_texts=test_texts,
-            train_labels=train_labels,
-            test_labels=test_labels,
-            label_names= label_names,
-            label_prefix=prefix)
+                            X_test_tfidf=X_test_tfidf,
+                            X_train_bert=X_train_bert,
+                            X_test_bert=X_test_bert,
+                            train_texts=train_texts,
+                            test_texts=test_texts,
+                            train_labels=train_labels,
+                            test_labels=test_labels,
+                            label_names=label_names,
+                            label_prefix=prefix)
 
         # Show time per dataset
         elapsed = time.time() - start_time
         print(f"✅ Finished {prefix} in {elapsed / 60:.1f} minutes")
+
 
 if __name__ == "__main__":
     process_and_run_all_models()

@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Load GoEmotions
-emotions_df = pd.read_csv("data/go_emotions_dataset.csv")
+emotions_df = pd.read_csv("resources/go_emotions_dataset.csv")
 
 # Show all columns to debug
 print("All columns in dataset:", emotions_df.columns.tolist())

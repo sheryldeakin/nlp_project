@@ -33,7 +33,7 @@ def scrape_mayo_symptoms(url):
 
                     # Skip blacklisted sections
                     if any(keyword.lower() in subcategory.lower() for keyword in blacklisted_keywords):
-                        subcategory = None  # Reset subcategory to avoid storing irrelevant data
+                        subcategory = None  # Reset subcategory to avoid storing irrelevant resources
                         continue
 
                 elif sub_section.name == "ul" and subcategory:  # Symptoms list under a subcategory
@@ -72,7 +72,7 @@ urls = [
     "https://www.mayoclinic.org/diseases-conditions/mild-cognitive-impairment/symptoms-causes/syc-20354578"
 ]
 
-# Scrape data from all pages
+# Scrape resources from all pages
 all_symptoms = []
 for url in urls:
     result = scrape_mayo_symptoms(url)
