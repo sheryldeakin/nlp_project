@@ -36,59 +36,6 @@ from sklearn.model_selection import train_test_split
 #     df["text"], df["label"], test_size=0.2, random_state=42
 # )
 
-###########################################################################################
-# Pre-Cleaning
-###########################################################################################
-import contractions
-import re
-from nltk.corpus import stopwords
-import nltk
-from nltk.stem import WordNetLemmatizer
-
-nltk.download('wordnet')
-lemmatizer = WordNetLemmatizer()
-
-nltk.download('stopwords')
-stop_words = set(stopwords.words("english"))
-
-slang_dict = {"brb": "be right back", "idk": "I don't know", "u": "you"}
-
-
-def clean_text(text):
-    re_number = re.compile('[0-9]+')
-    re_url = re.compile("http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
-    re_tag = re.compile('\[[A-Z]+\]')
-    re_char = re.compile('[^0-9a-zA-Z\s?!.,:\'\"//]+')
-    re_char_clean = re.compile('[^0-9a-zA-Z\s?!.,\[\]]')
-    re_punc = re.compile('[?!,.\'\"]')
-
-    text = re.sub(re_char, "", text)  # Remove unknown character
-    text = contractions.fix(text)  # Expand contraction
-    text = re.sub(re_url, ' [url] ', text)  # Replace URL with number
-    text = re.sub(re_char_clean, "", text)  # Only alphanumeric and punctuations.
-    # text = re.sub(re_punc, "", text) # Remove punctuation.
-    text = text.lower()  # Lower text
-    text = " ".join([w for w in text.split(' ') if w != " "])  # Remove whitespace
-
-    #   text = " ".join([lemmatizer.lemmatize(word) for word in text.split()])
-    text = " ".join([slang_dict[word] if word in slang_dict else word for word in text.split()])
-
-    # Makes BERT worse, but without BERT better
-    #   text = " ".join([word for word in text.split() if word not in stop_words]) # Remove stopwords
-
-    return text
-
-
-# Apply text cleaning to dataset
-df_sample["cleaned_text"] = df_sample["text"].apply(clean_text)
-
-# Display first few rows to verify
-print(df_sample[["text", "cleaned_text"]].head())
-
-# Use smaller dataset for training
-train_texts, test_texts, train_labels, test_labels = train_test_split(
-    df_sample["cleaned_text"], df_sample["label"], test_size=0.2, random_state=42
-)
 
 ###########################################################################################
 # TFID 
