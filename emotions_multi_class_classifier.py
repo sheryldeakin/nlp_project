@@ -1033,6 +1033,7 @@ class BERTClassifier(nn.Module):
 
 
 def train_bert_finetune_model(model, train_loader, test_loader, device, num_epochs, save_path, lr=2e-5, weights=1):
+
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     criterion = nn.BCEWithLogitsLoss(pos_weight=weights.to(device))
     model.to(device)
