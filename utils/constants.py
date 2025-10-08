@@ -9,11 +9,6 @@ class Constants:
     COLOR_ERROR = "\033[91m"  # Red
     COLOR_RESET = "\033[0m"
 
-nltk.download('wordnet')
-lemmatizer = WordNetLemmatizer()
-
-nltk.download('stopwords')
-stop_words = set(stopwords.words("english"))
 
 slang = {"brb": "be right back", "idk": "I don't know", "u": "you"}
 

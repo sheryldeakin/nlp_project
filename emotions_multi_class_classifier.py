@@ -4,6 +4,12 @@ import pandas as pd
 from preprocessing import text_clean
 from utils import constants
 
+nltk.download('wordnet')
+lemmatizer = WordNetLemmatizer()
+
+nltk.download('stopwords')
+stop_words = set(stopwords.words("english"))
+
 # Load dataset
 df = pd.read_csv("resources/csv_files/go_emotions_dataset.csv")  # Update with the correct path
 
