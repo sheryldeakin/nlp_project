@@ -1,19 +1,8 @@
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
-
-
 class Constants:
     COLOR_INFO: str = "\033[97m"  # Bright White
     COLOR_WARNING: str = "\033[93m"  # Yellow
     COLOR_ERROR: str = "\033[91m"  # Red
     COLOR_RESET: str = "\033[0m"
-
-    nltk.download('wordnet')
-    lemmatizer = WordNetLemmatizer()
-
-    nltk.download('stopwords')
-    stop_words = set(stopwords.words("english"))
 
     SLANG_DICT: dict[str, str] = {"brb": "be right back", "idk": "I don't know", "u": "you"}
 
