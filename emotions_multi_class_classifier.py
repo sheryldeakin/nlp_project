@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 
 from preprocessing import text_clean
-from utils import constants
 
 nltk.download('wordnet')
 lemmatizer = WordNetLemmatizer()
@@ -35,9 +34,7 @@ print(df.head())  # Verify labels are lists like [0,1,0,0,...]
 # For initial testing, take a smaller sample
 df_sample = df.sample(n=10000, random_state=42)
 
-
 from sklearn.model_selection import train_test_split
-
 
 # Apply text cleaning to dataset
 df_sample["cleaned_text"] = df_sample["text"].apply(text_clean.text_preprocessing_pipeline)
@@ -71,6 +68,7 @@ vectorizer = TfidfVectorizer(max_features=5000, stop_words="english")
 # Transform text into TF-IDF vectors
 X_train_tfidf = vectorizer.fit_transform(train_texts)
 X_test_tfidf = vectorizer.transform(test_texts)
+
 
 ###########################################################################################
 # Logistic Regression
@@ -150,8 +148,9 @@ def run_svm_tfidf(X_train_tfidf, X_test_tfidf, train_labels, test_labels):
 
         print(f"{label} | Acc: {accuracy:.4f} | F1 Micro: {f1_micro:.4f} | F1 Macro: {f1_macro:.4f}")
         results[label] = (
-        history, f1_micro, f1_macro, f1_micro, f1_macro, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy,
-        best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy)
+            history, f1_micro, f1_macro, f1_micro, f1_macro, best_epoch_test_accuracy,
+            best_accuracy_f1_micro_test_accuracy,
+            best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy)
 
     return results  # dict of kernel: (history, ...)
 
@@ -335,8 +334,9 @@ def run_svm_bert(X_train_bert, X_test_bert, train_labels, test_labels):
 
         print(f"{label} | Acc: {accuracy:.4f} | F1 Micro: {f1_micro:.4f} | F1 Macro: {f1_macro:.4f}")
         results[label] = (
-        history, f1_micro, f1_macro, f1_micro, f1_macro, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy,
-        best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy)
+            history, f1_micro, f1_macro, f1_micro, f1_macro, best_epoch_test_accuracy,
+            best_accuracy_f1_micro_test_accuracy,
+            best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy)
 
     return results
 
@@ -388,90 +388,6 @@ def prepare_mlp_dataloader(X_train_bert, X_test_bert, train_labels, test_labels,
     return train_loader, test_loader
 
 
-def train_mlp_model(model, train_loader, test_loader, device, num_epochs, save_path):
-    optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
-    # make LR higher, 
-    loss_fn = nn.BCEWithLogitsLoss()  # Multi-label loss
-
-    # Move model to GPU if available
-    model.to(device)
-
-    # For saving optimal epoch
-    best_f1 = 0.0
-
-    # For visualization of progress over epochs
-    history = {
-        "train_loss": [],
-        "train_f1_micro": [],
-        "test_f1_micro": [],
-        "train_accuracy": [],
-        "test_accuracy": [],
-    }
-
-    # Train MLP Model
-    print("\n Training MLP Classifier on BERT Embeddings...")
-    for epoch in range(num_epochs):
-        model.train()
-        total_loss = 0
-
-        y_true_train, y_pred_train = [], []
-
-        for X_batch, y_batch in train_loader:
-            X_batch, y_batch = X_batch.to(device), y_batch.to(device)
-            optimizer.zero_grad()
-            logits = model(X_batch)
-            loss = loss_fn(logits, y_batch)
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-
-            probs = torch.sigmoid(logits)
-            preds = (probs > 0.5).int().cpu().numpy()
-            y_pred_train.extend(preds)
-            y_true_train.extend(y_batch.cpu().numpy())
-
-        train_f1_micro = f1_score(y_true_train, y_pred_train, average="micro")
-        history["train_loss"].append(total_loss)
-        history["train_f1_micro"].append(train_f1_micro)
-        train_accuracy = accuracy_score(np.array(y_true_train), np.array(y_pred_train))
-        history["train_accuracy"].append(train_accuracy)
-
-        # Eval on test
-        model.eval()
-        y_true_test, y_pred_test = [], []
-        with torch.no_grad():
-            for X_batch, y_batch in test_loader:
-                X_batch = X_batch.to(device)
-                logits = model(X_batch)
-                probs = torch.sigmoid(logits)
-                preds = (probs > 0.5).int().cpu().numpy()
-                y_pred_test.extend(preds)
-                y_true_test.extend(y_batch.cpu().numpy())
-        test_f1_micro = f1_score(y_true_test, y_pred_test, average="micro")
-        history["test_f1_micro"].append(test_f1_micro)
-        test_accuracy = accuracy_score(np.array(y_true_test), np.array(y_pred_test))
-        history["test_accuracy"].append(test_accuracy)
-
-        print(
-            f"Epoch {epoch + 1}/{num_epochs} - Loss: {total_loss:.4f} | Train Acc: {train_accuracy:.4f} | Train F1: {train_f1_micro:.4f} | Test Acc: {test_accuracy:.4f} | Test F1: {test_f1_micro:.4f}")
-
-        # # Save best model
-        # if test_f1_micro > best_f1:
-        #     best_f1 = test_f1_micro
-        #     torch.save(model.state_dict(), save_path)
-        #     print(f"New best model saved (Test F1 Micro: {test_f1_micro:.4f})")
-
-        best_epoch_test_accuracy = np.argmax(history["test_accuracy"])
-        best_accuracy_f1_micro_test_accuracy = history["test_f1_micro"][best_epoch_test_accuracy]
-        best_accuracy_test_accuracy = history["test_accuracy"][best_epoch_test_accuracy]
-
-        best_epoch_f1_micro = np.argmax(history["test_f1_micro"])
-        best_f1_micro_test_accuracy = history["test_f1_micro"][best_epoch_f1_micro]
-        best_f1_test_accuracy = history["test_accuracy"][best_epoch_f1_micro]
-
-    return history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
-
-
 def plot_training_history(history):
     epochs = range(1, len(history["train_loss"]) + 1)
 
@@ -487,90 +403,6 @@ def plot_training_history(history):
     plt.grid(True)
     plt.tight_layout()
     plt.show()
-
-
-def evaluate_mlp_model(model, train_loader, test_loader, device, label_names):
-    # Evaluate Model on Test Set
-    def _evaluate(loader, split_name, label_names):
-        model.eval()
-        all_preds = []
-        all_labels = []
-
-        with torch.no_grad():
-            for X_batch, y_batch in loader:
-                X_batch, y_batch = X_batch.to(device), y_batch.to(device)
-                logits = model(X_batch)
-                probs = torch.sigmoid(logits)  # Convert to probabilities
-                preds = (probs > 0.5).int().cpu().numpy()
-                all_preds.extend(preds)
-                all_labels.extend(y_batch.cpu().numpy())
-
-        # Compute final accuracy & F1-Score for multiclass classification
-        mlp_accuracy = accuracy_score(all_labels, all_preds)
-        mlp_f1_micro = f1_score(all_labels, all_preds, average="micro")
-        mlp_f1_macro = f1_score(all_labels, all_preds, average="macro")
-
-        print(f"\n{split_name} Set Metrics for MLP + BERT:")
-        print(f"\nOverall Accuracy: {mlp_accuracy:.4f}")
-        print(f"Overall F1 Score (Micro): {mlp_f1_micro:.4f}")
-        print(f"Overall F1 Score (Macro): {mlp_f1_macro:.4f}")
-
-        y_true = np.array(all_labels)
-        y_pred = np.array(all_preds)
-        # Per-class precision, recall, F1
-        precisions, recalls, f1s, _ = precision_recall_fscore_support(
-            y_true, y_pred, average=None, zero_division=0
-        )
-
-        if isinstance(label_names, (list, np.ndarray)):
-            emotion_labels = label_names.tolist() if isinstance(label_names, np.ndarray) else label_names
-        else:
-            raise ValueError(
-                f"Expected label_names to be a list or ndarray, but got: {type(label_names).__name__}, label_names: {label_names}")
-
-        print("\nPer-class Precision / Recall / F1:")
-        for idx, label in enumerate(emotion_labels):  # or custom label list
-            print(f"{label:20s} | P: {precisions[idx]:.2f} | R: {recalls[idx]:.2f} | F1: {f1s[idx]:.2f}")
-
-        return mlp_f1_micro, mlp_f1_macro
-
-    # Evaluate both train and test
-    mlp_f1_micro_train, mlp_f1_macro_train = _evaluate(train_loader, "Train", label_names)
-    mlp_f1_micro_test, mlp_f1_macro_test = _evaluate(test_loader, "Test", label_names)
-
-    return mlp_f1_micro_train, mlp_f1_macro_train, mlp_f1_micro_test, mlp_f1_macro_test
-
-
-def run_mlp_bert(X_train_bert, X_test_bert, train_labels, test_labels, layer_dims, label, num_epochs, label_names):
-    print(f"------------------ MLP + BERT: {label} ------------------")
-
-    X_train_flat = X_train_bert.mean(axis=1)  # [num_samples, hidden_dim]
-    X_test_flat = X_test_bert.mean(axis=1)
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    train_loader, test_loader = prepare_mlp_dataloader(
-        X_train_flat, X_test_flat, train_labels, test_labels
-    )
-
-    num_classes = train_labels.shape[1]
-    model = MLPClassifier(input_dim=768, layer_dims=layer_dims, num_classes=num_classes)
-
-    save_path = f"resources/best_mlp_model_{label}.pt"
-
-    # # Load best model for final evaluation
-    # if os.path.exists(save_path):
-    #     model.load_state_dict(torch.load(save_path))
-    #     print("\nLoaded best model from disk for final evaluation for {label}.")
-
-    history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy = train_mlp_model(
-        model, train_loader, test_loader, device, num_epochs, save_path)
-    mlp_f1_micro_train, mlp_f1_macro_train, mlp_f1_micro_test, mlp_f1_macro_test = evaluate_mlp_model(model,
-                                                                                                      train_loader,
-                                                                                                      test_loader,
-                                                                                                      device,
-                                                                                                      label_names=label_names)
-
-    return history, mlp_f1_micro_train, mlp_f1_macro_train, mlp_f1_micro_test, mlp_f1_macro_test, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
 
 
 # ###########################################################################################
@@ -1033,7 +865,6 @@ class BERTClassifier(nn.Module):
 
 
 def train_bert_finetune_model(model, train_loader, test_loader, device, num_epochs, save_path, lr=2e-5, weights=1):
-
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
     criterion = nn.BCEWithLogitsLoss(pos_weight=weights.to(device))
     model.to(device)
@@ -1399,12 +1230,6 @@ def run_selected_models(
         results = run_svm_bert(X_train_bert, X_test_bert, train_labels, test_labels)
         for label, (history, *metrics) in results.items():
             store_results(label, history, *metrics, results_array=svm_bert_results)
-
-    if "mlp_bert" in models_to_run:
-        for dims, label in [([512, 256], "MLP 2-layer"), ([768, 512, 256], "MLP 3-layer")]:
-            history, *metrics = run_mlp_bert(X_train_bert, X_test_bert, train_labels, test_labels, layer_dims=dims,
-                                             label=label, num_epochs=num_epochs, label_names=label_names)
-            store_results(label, history, *metrics, results_array=mlp_results)
 
     if "cnn_bert" in models_to_run:
         cnn_configs_list = [
