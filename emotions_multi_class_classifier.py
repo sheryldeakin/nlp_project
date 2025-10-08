@@ -2,13 +2,6 @@ import numpy as np
 import pandas as pd
 
 from preprocessing import text_clean
-from utils import constants
-
-nltk.download('wordnet')
-lemmatizer = WordNetLemmatizer()
-
-nltk.download('stopwords')
-stop_words = set(stopwords.words("english"))
 
 # Load dataset
 df = pd.read_csv("resources/csv_files/go_emotions_dataset.csv")  # Update with the correct path
@@ -35,9 +28,7 @@ print(df.head())  # Verify labels are lists like [0,1,0,0,...]
 # For initial testing, take a smaller sample
 df_sample = df.sample(n=10000, random_state=42)
 
-
 from sklearn.model_selection import train_test_split
-
 
 # Apply text cleaning to dataset
 df_sample["cleaned_text"] = df_sample["text"].apply(text_clean.text_preprocessing_pipeline)
@@ -71,6 +62,7 @@ vectorizer = TfidfVectorizer(max_features=5000, stop_words="english")
 # Transform text into TF-IDF vectors
 X_train_tfidf = vectorizer.fit_transform(train_texts)
 X_test_tfidf = vectorizer.transform(test_texts)
+
 
 ###########################################################################################
 # Logistic Regression
@@ -330,12 +322,6 @@ def run_selected_models(
         results = run_svm_bert(X_train_bert, X_test_bert, train_labels, test_labels)
         for label, (history, *metrics) in results.items():
             store_results(label, history, *metrics, results_array=svm_bert_results)
-
-    if "mlp_bert" in models_to_run:
-        for dims, label in [([512, 256], "MLP 2-layer"), ([768, 512, 256], "MLP 3-layer")]:
-            history, *metrics = run_mlp_bert(X_train_bert, X_test_bert, train_labels, test_labels, layer_dims=dims,
-                                             label=label, num_epochs=num_epochs, label_names=label_names)
-            store_results(label, history, *metrics, results_array=mlp_results)
 
     if "cnn_bert" in models_to_run:
         cnn_configs_list = [
