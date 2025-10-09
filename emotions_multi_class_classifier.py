@@ -63,28 +63,19 @@ vectorizer = TfidfVectorizer(max_features=5000, stop_words="english")
 X_train_tfidf = vectorizer.fit_transform(train_texts)
 X_test_tfidf = vectorizer.transform(test_texts)
 
-
 ###########################################################################################
 # Logistic Regression
 ###########################################################################################
-
 
 
 ###########################################################################################
 # SVM
 ###########################################################################################
 
-from sklearn.multiclass import OneVsRestClassifier
-
 
 ###########################################################################################
 # Using BERT to expand text instead of TF-IDF
 ###########################################################################################
-from transformers import BertModel
-from tqdm import tqdm
-import numpy as np
-
-from transformers import AutoTokenizer
 
 # Load pre-trained BERT tokenizer & model - Baseline BERT model
 # tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
@@ -98,46 +89,6 @@ from transformers import AutoTokenizer
 num_labels = len(emotion_columns)
 print(f"num_labels: {num_labels}")
 
-
-# ###########################################################################################
-# # BERT + Logistic Regression
-# ###########################################################################################
-
-from sklearn.linear_model import LogisticRegression
-
-
-###########################################################################################
-# SVM + BERT
-###########################################################################################
-
-from sklearn.svm import SVC
-
-
-###########################################################################################
-# MLP + BERT (Multiclass)
-###########################################################################################
-
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset
-
-
-# ###########################################################################################
-# # CNN + BERT 
-# ###########################################################################################
-import torch.nn.functional as F
-
-import torch
-import torch.nn as nn
-
-
-# ###########################################################################################
-# # BiLSTM + BERT
-# ###########################################################################################
-
-# ###########################################################################################
-# # Straight up BERT
-# ###########################################################################################
 
 ###########################################################################################
 # Controller to run selected models
