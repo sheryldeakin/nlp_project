@@ -25,7 +25,13 @@ class CLIArguments:
 
     def parse(self) -> None:
         self._args = self._parser.parse_args()
-        self._logger.info(f"Arguments parsed successfully: {vars(self._args)}")
+        self._logger.info("=" * 100)
+        formatted_args = " ".join(
+            f"{key}: {value}" for key, value in vars(self._args).items()
+        )
+
+        self._logger.info(f"Arguments Passed: {formatted_args}")
+        self._logger.info("=" * 100)
 
     def get(self, name: str) -> Any:
         if self._args is None:
