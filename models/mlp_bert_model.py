@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_fscore_support
-from torch.utils.data import DataLoader, TensorDataset
 
+from nlp_project.utils.helper_methods import HelperMethods
 from nlp_project.utils.logger import Logger
 
 
@@ -30,24 +30,10 @@ class MLPClassifier(nn.Module):
 
 
 class MLPBert:
+    helper_methods: HelperMethods = HelperMethods()
 
     def __init__(self):
         self.logger: Logger = Logger(class_name=self.__class__.__name__)
-
-    def _prepare_mlp_dataloader(self, X_train_bert, X_test_bert, train_labels, test_labels, batch_size=64):
-        # Convert labels to numerical format for Multiclass Classification
-        X_train_tensor = torch.tensor(X_train_bert, dtype=torch.float32)
-        X_test_tensor = torch.tensor(X_test_bert, dtype=torch.float32)
-        y_train_tensor = torch.tensor(train_labels, dtype=torch.float32)  # float for BCE
-        y_test_tensor = torch.tensor(test_labels, dtype=torch.float32)
-
-        train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
-        test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
-
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-
-        return train_loader, test_loader
 
     def _evaluate(self, model, loader, device, split_name, label_names):
         model.eval()
@@ -185,16 +171,16 @@ class MLPBert:
 
         return history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
 
-    def run_mlp_bert(self, X_train_bert, X_test_bert, train_labels, test_labels, layer_dims, label, num_epochs,
+    def run_mlp_bert(self, x_train_bert, x_test_bert, train_labels, test_labels, layer_dims, label, num_epochs,
                      label_names):
         self.logger.info(f"------------------ MLP + BERT: {label} ------------------")
 
-        X_train_flat = X_train_bert.mean(axis=1)  # [num_samples, hidden_dim]
-        X_test_flat = X_test_bert.mean(axis=1)
+        x_train_flat = x_train_bert.mean(axis=1)  # [num_samples, hidden_dim]
+        x_test_flat = x_test_bert.mean(axis=1)
 
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        train_loader, test_loader = self._prepare_mlp_dataloader(
-            X_train_flat, X_test_flat, train_labels, test_labels
+        train_loader, test_loader = self.helper_methods.prepare_mlp_dataloader(
+            x_train_flat, x_test_flat, train_labels, test_labels
         )
 
         num_classes = train_labels.shape[1]
