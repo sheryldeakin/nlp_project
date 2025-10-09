@@ -1,10 +1,10 @@
-
 import re
+import string
+
 import emoji
 from bs4 import BeautifulSoup
-import string
-from utils import constants
 
+from utils.constants import Constants
 
 
 def clean_text(text):
@@ -75,8 +75,8 @@ def remove_space(text):
 def text_preprocessing_pipeline(text):
     '''Cleaning and parsing the text.'''
     text = clean_text(text)
-    text = clean_contractions(text, contraction_mapping)
-    text = clean_special_chars(text, punct, punct_mapping)
-    text = correct_spelling(text, mispell_dict)
+    text = clean_contractions(text, Constants.CONTRACTION_MAPPING_DICT)
+    text = clean_special_chars(text, Constants.PUNCTUATION_DICT, Constants.PUNCTUATION_MAPPING_DICT)
+    text = correct_spelling(text, Constants.MIS_SPELLING_DICT)
     text = remove_space(text)
     return text
