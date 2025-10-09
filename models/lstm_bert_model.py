@@ -1,12 +1,8 @@
-import os
-
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from sklearn.metrics import accuracy_score, f1_score, precision_recall_fscore_support
-from torch.utils.data import DataLoader, TensorDataset
+from sklearn.metrics import accuracy_score, f1_score
 
 from nlp_project.preprocessing.go_emotions_preprocessing import GoEmotionsPreprocessing
 from nlp_project.utils.helper_methods import HelperMethods
@@ -32,12 +28,12 @@ class BiLSTMClassifier(nn.Module):
 
 
 class LSTMBert:
+    helper_methods: HelperMethods = HelperMethods()
+    go_emotions_preprocessing: GoEmotionsPreprocessing = GoEmotionsPreprocessing()
 
     def __init__(self, num_epochs: int = 100):
         self.logger: Logger = Logger(class_name=self.__class__.__name__)
         self.num_epochs = num_epochs
-        self.helper_methods: HelperMethods = HelperMethods()
-        self.go_emotions_preprocessing: GoEmotionsPreprocessing = GoEmotionsPreprocessing()
 
     def _train_lstm_model(self, model, train_loader, test_loader, device, num_epochs, save_path, lr=1e-8, weights=1):
         optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -92,13 +88,13 @@ class LSTMBert:
             history["test_f1_micro"].append(test_f1)
             history["test_accuracy"].append(test_acc)
 
-            print(
+            self.logger.info(
                 f"Epoch {epoch + 1}/{num_epochs} - Loss: {total_loss:.4f} | Train Acc: {train_acc:.4f} | Train F1: {train_f1:.4f} | Test Acc: {test_acc:.4f} | Test F1: {test_f1:.4f}")
 
             # if test_f1 > best_f1:
             #     best_f1 = test_f1
             #     torch.save(model.state_dict(), save_path)
-            #     print(f"New best LSTM model saved for test F1: {test_f1:.4f}")
+            #     self.logger.info(f"New best LSTM model saved for test F1: {test_f1:.4f}")
 
             best_epoch_test_accuracy = np.argmax(history["test_accuracy"])
             best_accuracy_f1_micro_test_accuracy = history["test_f1_micro"][best_epoch_test_accuracy]
@@ -110,91 +106,14 @@ class LSTMBert:
 
         return history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
 
-    def _evaluate_cnn_model(self, model, train_loader, test_loader, device, label="cnn_model", label_names=""):
-        def _evaluate(loader, split_name, label_names):
-            model.eval()
-            all_preds, all_labels = [], []
-
-            with torch.no_grad():
-                for X_batch, y_batch in loader:
-                    X_batch, y_batch = X_batch.to(device), y_batch.to(device)
-                    logits = model(X_batch)
-                    probs = torch.sigmoid(logits)
-                    preds = (probs > 0.5).int().cpu().numpy()
-                    all_preds.extend(preds)
-                    all_labels.extend(y_batch.cpu().numpy())
-
-            acc = accuracy_score(all_labels, all_preds)
-            f1_micro = f1_score(all_labels, all_preds, average="micro")
-            f1_macro = f1_score(all_labels, all_preds, average="macro")
-
-            print(f"\n{split_name} Set Metrics for CNN + BERT:")
-            print(f"Overall Accuracy: {acc:.4f}")
-            print(f"F1 Score (Micro): {f1_micro:.4f}")
-            print(f"F1 Score (Macro): {f1_macro:.4f}")
-
-            y_true = np.array(all_labels)
-            y_pred = np.array(all_preds)
-
-            # Per-class metrics
-            precisions, recalls, f1s, _ = precision_recall_fscore_support(
-                y_true, y_pred, average=None, zero_division=0
-            )
-
-            if isinstance(label_names, (list, np.ndarray)):
-                emotion_labels = label_names.tolist() if isinstance(label_names, np.ndarray) else label_names
-            else:
-                raise ValueError(
-                    f"Expected label_names to be a list or ndarray, but got: {type(label_names).__name__}, label_names: {label_names}")
-
-            # Store per-class results
-            df = pd.DataFrame({
-                "Label": emotion_labels,
-                "Precision": precisions,
-                "Recall": recalls,
-                "F1": f1s
-            })
-
-            # Save to CSV
-            save_dir = "logs"
-            os.makedirs(save_dir, exist_ok=True)
-            save_path = os.path.join(save_dir, f"{label}_{split_name.lower()}_metrics.csv")
-            df.to_csv(save_path, index=False)
-            print(f"\nPer-class metrics saved to {save_path}")
-
-            # Print final sorted values
-            print(f"\n{split_name} Set — Top Emotions by F1:")
-            print(df.sort_values(by="F1", ascending=False).to_string(index=False))
-
-            return f1_micro, f1_macro
-
-        f1_micro_train, f1_macro_train = _evaluate(train_loader, "Train", label_names)
-        f1_micro_test, f1_macro_test = _evaluate(test_loader, "Test", label_names)
-
-        return f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test
-
-    def _prepare_mlp_dataloader(self, X_train_bert, X_test_bert, train_labels, test_labels, batch_size=64):
-        # Convert labels to numerical format for Multiclass Classification
-        X_train_tensor = torch.tensor(X_train_bert, dtype=torch.float32)
-        X_test_tensor = torch.tensor(X_test_bert, dtype=torch.float32)
-        y_train_tensor = torch.tensor(train_labels, dtype=torch.float32)  # float for BCE
-        y_test_tensor = torch.tensor(test_labels, dtype=torch.float32)
-
-        train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
-        test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
-
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-
-        return train_loader, test_loader
-
-    def _run_lstm_bert(self, X_train_bert, X_test_bert, train_labels, test_labels, hidden_dimensions, num_layers,
+    def _run_lstm_bert(self, x_train_bert, x_test_bert, train_labels, test_labels, hidden_dimensions, num_layers,
                        dropout, learning_rate,
                        label,
                        num_epochs=200, label_names=""):
-        print(f"------------------ BiLSTM + BERT: {label} ------------------")
+        self.logger.info(f"------------------ BiLSTM + BERT: {label} ------------------")
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        train_loader, test_loader = self._prepare_mlp_dataloader(X_train_bert, X_test_bert, train_labels, test_labels)
+        train_loader, test_loader = self.helper_methods.prepare_mlp_dataloader(x_train_bert, x_test_bert, train_labels,
+                                                                               test_labels)
 
         num_classes = train_labels.shape[1]
         model = BiLSTMClassifier(
@@ -217,14 +136,16 @@ class LSTMBert:
 
         # if os.path.exists(save_path):
         #     model.load_state_dict(torch.load(save_path))
-        #     print(f"\nLoaded best BiLSTM model for {label}.")
+        #     self.logger.info(f"\nLoaded best BiLSTM model for {label}.")
 
         history, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy = self._train_lstm_model(
             model, train_loader, test_loader, device, num_epochs, save_path, lr=learning_rate, weights=weights)
-        f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test = self._evaluate_cnn_model(model, train_loader,
-                                                                                                test_loader,
-                                                                                                device, label=label,
-                                                                                                label_names=label_names)
+        f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test = self.helper_methods.evaluate_cnn_model(model,
+                                                                                                              train_loader,
+                                                                                                              test_loader,
+                                                                                                              device,
+                                                                                                              label=label,
+                                                                                                              label_names=label_names)
 
         return history, f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
 
@@ -233,8 +154,8 @@ class LSTMBert:
         lstm_results = []
         train_texts, test_texts, train_labels, test_labels = self.go_emotions_preprocessing.get_training_test_data_split()
 
-        X_train_bert = self.helper_methods.get_bert_embeddings(train_texts, batch_size=32)
-        X_test_bert = self.helper_methods.get_bert_embeddings(test_texts, batch_size=32)
+        x_train_bert = self.helper_methods.get_bert_embeddings(train_texts, batch_size=32)
+        x_test_bert = self.helper_methods.get_bert_embeddings(test_texts, batch_size=32)
         label_names = self.helper_methods.get_go_emotions_column_dataframe()
 
         lstm_configs_list = [
@@ -247,11 +168,11 @@ class LSTMBert:
             (256, 2, 0.3, 1e-6, "bilstm_lr_1e6"),
         ]
         for hidden_dimensions, num_layers, dropout, learning_rate, label in lstm_configs_list:
-            print(f"\nRunning BiLSTM: {label}")
-            history, *metrics = self._run_lstm_bert(X_train_bert=X_train_bert, X_test_bert=X_test_bert,
+            self.logger.info(f"\nRunning BiLSTM: {label}")
+            history, *metrics = self._run_lstm_bert(x_train_bert=x_train_bert, x_test_bert=x_test_bert,
                                                     train_labels=train_labels, test_labels=test_labels,
                                                     hidden_dimensions=hidden_dimensions, num_layers=num_layers,
-                                                    dropout=dropout, lr=learning_rate, label=label,
+                                                    dropout=dropout, learning_rate=learning_rate, label=label,
                                                     num_epochs=self.num_epochs,
                                                     label_names=label_names)
-            store_results(f"BiLSTM {label}", history, *metrics, results_array=lstm_results)
+            self.helper_methods.store_results(f"BiLSTM {label}", history, *metrics, results_array=lstm_results)
