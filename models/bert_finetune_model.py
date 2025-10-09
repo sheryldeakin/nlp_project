@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score, f1_score, precision_recall_fscore_su
 from transformers import BertModel
 from transformers import BertTokenizer, BertForSequenceClassification
 
-from nlp_project.utils.logger import Logger
+from utils.logger import Logger
 
 
 def tokenize_for_bert(texts, tokenizer, max_length=64):

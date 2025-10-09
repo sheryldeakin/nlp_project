@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
 
-from nlp_project.utils.logger import Logger
+from utils.logger import Logger
 
 
 class LogisticalRegressionBert:

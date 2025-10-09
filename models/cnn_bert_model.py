@@ -4,8 +4,8 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.metrics import accuracy_score, f1_score
 
-from nlp_project.utils.helper_methods import HelperMethods
-from nlp_project.utils.logger import Logger
+from utils.helper_methods import HelperMethods
+from utils.logger import Logger
 
 
 class FocalLoss(nn.Module):

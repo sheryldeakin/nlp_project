@@ -3,7 +3,7 @@ from sklearn.metrics import accuracy_score, f1_score
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.svm import SVC
 
-from nlp_project.utils.logger import Logger
+from utils.logger import Logger
 
 
 class SMVBert:

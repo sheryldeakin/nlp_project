@@ -5,7 +5,7 @@ import torch.optim as optim
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_fscore_support
 
 from nlp_project.utils.helper_methods import HelperMethods
-from nlp_project.utils.logger import Logger
+from utils.logger import Logger
 
 
 class MLPClassifier(nn.Module):
