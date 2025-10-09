@@ -8,8 +8,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from tqdm import tqdm
 from transformers import AutoTokenizer
 from transformers import BertForSequenceClassification
-
-from nlp_project.utils.logger import Logger
+from utils.logger import Logger
 
 
 class HelperMethods:
@@ -17,15 +16,17 @@ class HelperMethods:
     def __init__(self):
         self.logger: Logger = Logger(class_name=self.__class__.__name__)
 
-        self.bert_model = self.get_bert_model()
-        self.auto_tokenizer = self.get_auto_tokenizer()
         self.emotion_column = self.get_go_emotions_column_dataframe()
-        self.num_labels = len(self.emotion_column)
+        self.num_labels: int = len(self.emotion_column)
+        self.auto_tokenizer = self.get_auto_tokenizer()
+        self.bert_model = self.get_bert_model()
 
-    def get_auto_tokenizer(self):
+    @staticmethod
+    def get_auto_tokenizer():
         return AutoTokenizer.from_pretrained("sdeakin/fine_tuned_bert_emotions")
 
     def get_bert_model(self):
+
         return BertForSequenceClassification.from_pretrained(
             "sdeakin/fine_tuned_bert_emotions",
             num_labels=self.num_labels,
@@ -33,7 +34,8 @@ class HelperMethods:
             ignore_mismatched_sizes=True
         )
 
-    def get_go_emotions_column_dataframe(self):
+    @staticmethod
+    def get_go_emotions_column_dataframe():
 
         go_emotions_dataframe: pd.DataFrame = pd.read_csv("resources/csv_files/go_emotions_dataset.csv")
         go_emotions_dataframe: pd.DataFrame = go_emotions_dataframe.drop(columns=["id", "example_very_unclear"])
@@ -41,7 +43,8 @@ class HelperMethods:
 
         return emotion_column
 
-    def prepare_mlp_dataloader(self, X_train_bert, X_test_bert, train_labels, test_labels, batch_size=64):
+    @staticmethod
+    def prepare_mlp_dataloader(X_train_bert, X_test_bert, train_labels, test_labels, batch_size=64):
         # Convert labels to numerical format for Multiclass Classification
         X_train_tensor = torch.tensor(X_train_bert, dtype=torch.float32)
         X_test_tensor = torch.tensor(X_test_bert, dtype=torch.float32)
@@ -56,10 +59,14 @@ class HelperMethods:
 
         return train_loader, test_loader
 
-    def store_results(self, label, history, f1_train_micro, f1_train_macro, f1_test_micro, f1_test_macro,
+    @staticmethod
+    def store_results(label, history, f1_train_micro, f1_train_macro, f1_test_micro, f1_test_macro,
                       best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy,
                       best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy,
                       results_array=None):
+
+        history_dict: dict = {}
+        final_results: list = []
 
         label_prefix = "emotions"
 
