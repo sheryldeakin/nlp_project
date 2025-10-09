@@ -1,5 +1,7 @@
+import numpy as np
 import pandas as pd
 from preprocessing import text_clean
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 
 
@@ -42,3 +44,18 @@ class GoEmotionsPreprocessing:
         )
 
         return train_texts, test_texts, train_labels, test_labels
+
+    def get_tfidf_vectorized_train_test_data(self):
+        train_texts, test_texts, train_labels, test_labels = self.get_training_test_data_split()
+
+        vectorizer = TfidfVectorizer(max_features=5000, stop_words="english")
+
+        train_texts_list: list = train_texts.tolist()
+        test_texts_list: list = test_texts.tolist()
+        train_labels_array:np.ndarray = np.array(train_labels.tolist(), dtype=np.float32)  # Convert labels to arrays
+        test_labels_array:np.ndarray = np.array(test_labels.tolist(), dtype=np.float32)
+
+        x_train_tfidf = vectorizer.fit_transform(train_texts_list)
+        x_test_tfidf = vectorizer.transform(test_texts_list)
+
+        return x_train_tfidf, x_test_tfidf, train_labels_array, test_labels_array
