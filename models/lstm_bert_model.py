@@ -2,9 +2,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from sklearn.metrics import accuracy_score, f1_score
-
 from preprocessing.go_emotions_preprocessing import GoEmotionsPreprocessing
+from sklearn.metrics import accuracy_score, f1_score
 from utils.helper_methods import HelperMethods
 from utils.logger import Logger
 
@@ -149,13 +148,15 @@ class LSTMBert:
 
         return history, f1_micro_train, f1_macro_train, f1_micro_test, f1_macro_test, best_epoch_test_accuracy, best_accuracy_f1_micro_test_accuracy, best_accuracy_test_accuracy, best_epoch_f1_micro, best_f1_micro_test_accuracy, best_f1_test_accuracy
 
-    def execute_lstm_bert(self):
+    def execute_lstm_bert(self) -> None:
 
         lstm_results = []
         train_texts, test_texts, train_labels, test_labels = self.go_emotions_preprocessing.get_training_test_data_split()
 
-        x_train_bert = self.helper_methods.get_bert_embeddings(train_texts, batch_size=32)
-        x_test_bert = self.helper_methods.get_bert_embeddings(test_texts, batch_size=32)
+        train_texts_list: list = train_texts.tolist()
+        test_texts_list: list = test_texts.tolist()
+        x_train_bert = self.helper_methods.get_bert_embeddings(train_texts_list, batch_size=32)
+        x_test_bert = self.helper_methods.get_bert_embeddings(test_texts_list, batch_size=32)
         label_names = self.helper_methods.get_go_emotions_column_dataframe()
 
         lstm_configs_list = [
