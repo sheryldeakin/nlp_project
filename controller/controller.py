@@ -1,11 +1,13 @@
 from typing import Any
 
 from models.logreg_bert import LogisticalRegressionBert
+from models.lstm_bert_model import LSTMBert
 from models.svm_tfidf import SVMTfidf
 from utils.logger import Logger
 
 
 class Controller:
+    lstm_bert: LSTMBert = LSTMBert()
     svm_tfidf: SVMTfidf = SVMTfidf()
     logreg_bert: LogisticalRegressionBert = LogisticalRegressionBert()
 
@@ -18,7 +20,7 @@ class Controller:
             "mlp_bert": 0,
             "cnn_bert": 0,
             "svm_bert": 0,
-            "lstm_bert": 0,
+            "lstm_bert": self.lstm_bert.execute_lstm_bert,
             "svm_tfidf": self.svm_tfidf.execute_smv_tfidf_model,
             "logreg_bert": self.logreg_bert.execute_logreg_bert_model,
             "logreg_tfidf": 0,
