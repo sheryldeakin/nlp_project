@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.metrics import accuracy_score, f1_score, precision_recall_fscore_support
 
-from nlp_project.utils.helper_methods import HelperMethods
+from utils.helper_methods import HelperMethods
 from utils.logger import Logger
 
 
