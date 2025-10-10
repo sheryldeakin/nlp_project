@@ -1,23 +1,26 @@
 from typing import Any
 
+from models.logreg_bert import LogisticalRegressionBert
 from models.svm_tfidf import SVMTfidf
 from utils.logger import Logger
 
 
 class Controller:
     svm_tfidf: SVMTfidf = SVMTfidf()
+    logreg_bert: LogisticalRegressionBert = LogisticalRegressionBert()
 
     def __init__(self):
         self.logger: Logger = Logger(class_name=self.__class__.__name__)
 
     def execute_model(self, model_name_str: str) -> dict[str, Any]:
+
         model_dict: dict[str, Any] = {
             "mlp_bert": 0,
             "cnn_bert": 0,
             "svm_bert": 0,
             "lstm_bert": 0,
-            "svm_tfidf": self.svm_tfidf.execute_smv_tfidf_model(),
-            "logreg_bert": 0,
+            "svm_tfidf": self.svm_tfidf.execute_smv_tfidf_model,
+            "logreg_bert": self.logreg_bert.execute_logreg_bert_model,
             "logreg_tfidf": 0,
             "bert_finetune": 0,
             "all_models": 0
@@ -30,5 +33,6 @@ class Controller:
 
         else:
             self.logger.info(f"Executing Model: {model_name_str.capitalize()}")
+            model_dict[model_name_str]()
 
         return model_dict
