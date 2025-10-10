@@ -14,7 +14,7 @@ class SVMTfidf:
     def __init__(self):
         self.logger: Logger = Logger(class_name=self.__class__.__name__)
 
-    def run_svm_tfidf(self, X_train_tfidf, X_test_tfidf, train_labels, test_labels):
+    def run_svm_tfidf(self, X_train_tfidf, X_test_tfidf, train_labels, test_labels) -> dict:
         self.logger.info("=" * 100)
         self.logger.info("-" * 40 + "Training SVM + TFIDF" + "-" * 40)
         self.logger.info("=" * 100)
@@ -64,7 +64,7 @@ class SVMTfidf:
 
         return results
 
-    def execute_smv_tfidf_model(self):
+    def execute_smv_tfidf_model(self) -> None:
 
         x_train_tfidf, x_test_tfidf, train_labels_array, test_labels_array = self.go_emotions_preprocessing.get_tfidf_vectorized_train_test_data()
 
