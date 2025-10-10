@@ -4,8 +4,11 @@ from preprocessing import text_clean
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
 
+from utils.helper_methods import HelperMethods
+
 
 class GoEmotionsPreprocessing:
+    helper_methods: HelperMethods = HelperMethods()
 
     def __init__(self):
         self.file_path_str: str = "resources/csv_files/go_emotions_dataset.csv"
@@ -45,6 +48,19 @@ class GoEmotionsPreprocessing:
 
         return train_texts, test_texts, train_labels, test_labels
 
+    def get_bert_embeddings_train_test_data(self):
+        train_texts, test_texts, train_labels, test_labels = self.get_training_test_data_split()
+
+        train_texts_list: list = train_texts.tolist()
+        test_texts_list: list = test_texts.tolist()
+        x_train_bert = self.helper_methods.get_bert_embeddings(train_texts_list, batch_size=32)
+        x_test_bert = self.helper_methods.get_bert_embeddings(test_texts_list, batch_size=32)
+
+        train_labels_array: np.ndarray = np.array(train_labels.tolist(), dtype=np.float32)
+        test_labels_array: np.ndarray = np.array(test_labels.tolist(), dtype=np.float32)
+
+        return x_train_bert, x_test_bert, train_labels_array, test_labels_array
+
     def get_tfidf_vectorized_train_test_data(self):
         train_texts, test_texts, train_labels, test_labels = self.get_training_test_data_split()
 
@@ -52,8 +68,8 @@ class GoEmotionsPreprocessing:
 
         train_texts_list: list = train_texts.tolist()
         test_texts_list: list = test_texts.tolist()
-        train_labels_array:np.ndarray = np.array(train_labels.tolist(), dtype=np.float32)  # Convert labels to arrays
-        test_labels_array:np.ndarray = np.array(test_labels.tolist(), dtype=np.float32)
+        train_labels_array: np.ndarray = np.array(train_labels.tolist(), dtype=np.float32)
+        test_labels_array: np.ndarray = np.array(test_labels.tolist(), dtype=np.float32)
 
         x_train_tfidf = vectorizer.fit_transform(train_texts_list)
         x_test_tfidf = vectorizer.transform(test_texts_list)
