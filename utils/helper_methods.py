@@ -99,8 +99,8 @@ class HelperMethods:
 
                 # Tokenize batch
                 # tokens = tokenizer(batch_texts, padding=True, truncation=True, return_tensors="pt", max_length=512)
-                tokens = self.tokenizer(batch_texts, padding="max_length", truncation=True, return_tensors="pt",
-                                        max_length=64)
+                tokens = self.auto_tokenizer(batch_texts, padding="max_length", truncation=True, return_tensors="pt",
+                                             max_length=64)
 
                 # Move tokens to GPU if available
                 # tokens = {key: value.to(device) for key, value in tokens.items()}
